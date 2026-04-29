@@ -321,6 +321,19 @@
       flex-shrink: 0; line-height: 1.5;
     }
 
+    /* ── Admin lock button ──────────────────────── */
+    .admin-btn {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: white; cursor: pointer;
+      border-radius: 8px; padding: 4px 10px;
+      font-size: 12px; font-weight: 700;
+      font-family: inherit; margin-top: 5px;
+      transition: background 0.15s; display: block;
+    }
+    .admin-btn:hover { background: rgba(255,255,255,0.22); }
+    .admin-btn.unlocked { background: rgba(253,230,138,0.18); border-color: rgba(253,230,138,0.4); color: #fde68a; }
+
     /* ── Level picker (join modal) ──────────────── */
     .lvl-section-label {
       font-size: 12px; font-weight: 700; color: var(--s600);
@@ -357,6 +370,7 @@
     <div class="hd-right">
       <div class="hd-online">👥 <span id="online-count">—</span> online 在线</div>
       <div id="my-status"></div>
+      <button class="admin-btn" id="admin-btn" onclick="onAdminBtnClick()">🔒 Admin</button>
     </div>
   </div>
 </header>
@@ -433,6 +447,23 @@
   </div>
 </div>
 
+<!-- ── PIN Modal ─────────────────────────────────────── -->
+<div class="overlay" id="pin-modal" onclick="if(event.target===this)hidePinModal()">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title">Admin Login 管理员登录</div>
+    <div class="m-sub">Enter PIN to unlock admin controls / 输入 PIN 码解锁管理功能</div>
+    <input class="m-input" id="pin-input" type="password" placeholder="PIN"
+      maxlength="20" autocomplete="off"
+      onkeydown="if(event.key==='Enter')submitPin()">
+    <div id="pin-error" style="color:#ef4444;font-size:13px;margin:-8px 0 12px;display:none">Wrong PIN / 密码错误</div>
+    <div class="m-row">
+      <button class="m-btn cancel" onclick="hidePinModal()">Cancel 取消</button>
+      <button class="m-btn ok" onclick="submitPin()">Unlock 解锁</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const socket = io();
 const IDS = [6, 7, 8, 9, 10];
@@ -445,9 +476,12 @@ const LEVEL_COLORS = {
   'E+':'#ca8a04', 'E' :'#ea580c', 'E-':'#dc2626',
 };
 
+const ADMIN_PIN = '1234'; // ← change this to your own PIN
+
 let state = { courts: {}, queue: [], players: {} };
 let myName  = localStorage.getItem('bmt_name')  || '';
 let myLevel = localStorage.getItem('bmt_level') || 'D';
+let isAdmin = localStorage.getItem('bmt_admin') === '1';
 let assigningPlayer = null;
 let howtoOn = !localStorage.getItem('bmt_howto_off');
 
@@ -462,6 +496,18 @@ function render() {
   renderCourts();
   renderQueue();
   renderMyStatus();
+  renderAdminBtn();
+}
+
+function renderAdminBtn() {
+  const btn = document.getElementById('admin-btn');
+  if (isAdmin) {
+    btn.textContent = '🔓 Admin';
+    btn.classList.add('unlocked');
+  } else {
+    btn.textContent = '🔒 Admin';
+    btn.classList.remove('unlocked');
+  }
 }
 
 function renderHowto() {
@@ -508,22 +554,29 @@ function buildCourt(id) {
       return `<div class="p-cell filled${me?' me':''}">
         <span class="p-name${me?' me':''}" style="max-width:50px" title="${esc(p)}">${esc(p)}</span>
         ${lvlBadge(p)}
-        <button class="p-rm" onclick="removeFromCourt(${id},'${escJs(p)}')">×</button>
+        ${isAdmin ? `<button class="p-rm" onclick="removeFromCourt(${id},'${escJs(p)}')">×</button>` : ''}
       </div>`;
     }
     return `<div class="p-cell empty"><span class="p-empty-txt">Empty 空位</span></div>`;
   }).join('');
 
   let actions = '';
-  if (c.playing || full) {
-    actions = `
-      <button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue 结束排队</button>
-      <button class="c-btn el" onclick="endGame(${id},false)">✕ Clear 离场</button>`;
-  } else if (canFill) {
-    actions = `<button class="c-btn fill" style="background:${col}" onclick="socket.emit('fill_court',${id})">Fill Court 叫人上场 ▶</button>`;
+  if (isAdmin) {
+    if (c.playing || full) {
+      actions = `
+        <button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue 结束排队</button>
+        <button class="c-btn el" onclick="endGame(${id},false)">✕ Clear 离场</button>`;
+    } else if (canFill) {
+      actions = `<button class="c-btn fill" style="background:${col}" onclick="socket.emit('fill_court',${id})">Fill Court 叫人上场 ▶</button>`;
+    } else {
+      const msg = count === 0 ? 'Waiting for players 等待球员' : `${count}/4 – need more 等待更多`;
+      actions = `<button class="c-btn dim" disabled>${msg}</button>`;
+    }
   } else {
-    const msg = count === 0 ? 'Waiting for players 等待球员' : `${count}/4 – need more 等待更多`;
-    actions = `<button class="c-btn dim" disabled>${msg}</button>`;
+    if (!c.playing && !full) {
+      const msg = count === 0 ? 'Waiting for players 等待球员' : `${count}/4 – need more 等待更多`;
+      actions = `<button class="c-btn dim" disabled>${msg}</button>`;
+    }
   }
 
   return `
@@ -559,8 +612,8 @@ function renderQueue() {
       <span class="q-name${me?' me':''}" title="${esc(name)}">${esc(name)}${me?' ★':''}</span>
       ${lvlBadge(name)}
       <div class="q-actions">
-        ${avail.length ? `<button class="q-assign-btn" onclick="showAssignModal('${escJs(name)}')" title="指定场地上场">⬆</button>` : ''}
-        <button class="q-rm-btn" onclick="removeFromQueue('${escJs(name)}')" title="移除">×</button>
+        ${isAdmin && avail.length ? `<button class="q-assign-btn" onclick="showAssignModal('${escJs(name)}')" title="Assign to court 指定场地">⬆</button>` : ''}
+        ${isAdmin || name === myName ? `<button class="q-rm-btn" onclick="removeFromQueue('${escJs(name)}')" title="Remove 移除">×</button>` : ''}
       </div>
     </div>`;
   }).join('') + `</div>`;
@@ -661,6 +714,36 @@ function doAssign(courtId) {
   if (!assigningPlayer) return;
   socket.emit('assign_player', { courtId, name: assigningPlayer });
   hideAssignModal();
+}
+
+// ── Admin PIN ─────────────────────────────────────────
+
+function onAdminBtnClick() {
+  if (isAdmin) {
+    isAdmin = false;
+    localStorage.removeItem('bmt_admin');
+    render();
+  } else {
+    openModal('pin-modal');
+    const inp = document.getElementById('pin-input');
+    inp.value = '';
+    document.getElementById('pin-error').style.display = 'none';
+    setTimeout(() => inp.focus(), 250);
+  }
+}
+function hidePinModal() { closeModal('pin-modal'); }
+function submitPin() {
+  const val = document.getElementById('pin-input').value;
+  if (val === ADMIN_PIN) {
+    isAdmin = true;
+    localStorage.setItem('bmt_admin', '1');
+    hidePinModal();
+    render();
+  } else {
+    document.getElementById('pin-error').style.display = 'block';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+  }
 }
 
 // ── Modal helpers ─────────────────────────────────────
