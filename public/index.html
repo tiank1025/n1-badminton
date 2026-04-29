@@ -416,16 +416,8 @@
   <div class="howto" id="howto">
     <div class="howto-icon">💡</div>
     <div class="howto-body">
-      <div class="howto-title">How to Use 怎么使用</div>
-      <div class="howto-steps">
-        <span class="howto-step">① Join Queue 加入队列</span>
-        <span class="howto-arrow">→</span>
-        <span class="howto-step">② Wait to be called 等待叫人上场</span>
-        <span class="howto-arrow">→</span>
-        <span class="howto-step">③ End game when done 打完点结束</span>
-        <span class="howto-arrow">→</span>
-        <span class="howto-step">④ Re-join queue 重新排队</span>
-      </div>
+      <div class="howto-title" id="howto-title"></div>
+      <div class="howto-steps" id="howto-steps"></div>
     </div>
     <button class="howto-close" onclick="dismissHowto()">✕</button>
   </div>
@@ -568,6 +560,25 @@ function renderAdminBtn() {
 
 function renderHowto() {
   document.getElementById('howto').style.display = howtoOn ? '' : 'none';
+  if (isAdmin) {
+    document.getElementById('howto-title').textContent = 'Admin Flow 管理员流程';
+    document.getElementById('howto-steps').innerHTML = `
+      <span class="howto-step">① Fill On Deck 选人候场</span>
+      <span class="howto-arrow">→</span>
+      <span class="howto-step">② Send to court when full 满员发送上场</span>
+      <span class="howto-arrow">→</span>
+      <span class="howto-step">③ End & Re-queue when done 打完结束排队</span>`;
+  } else {
+    document.getElementById('howto-title').textContent = 'How to Play 参与方法';
+    document.getElementById('howto-steps').innerHTML = `
+      <span class="howto-step">① Tap "+ Join Queue" to sign up 点击加入队列</span>
+      <span class="howto-arrow">→</span>
+      <span class="howto-step">② Watch for your name in On Deck 等待出现在候场区</span>
+      <span class="howto-arrow">→</span>
+      <span class="howto-step">③ Head to your court when moved up 上场打球</span>
+      <span class="howto-arrow">→</span>
+      <span class="howto-step">④ Re-join queue after game 打完重新排队</span>`;
+  }
 }
 function dismissHowto() {
   howtoOn = false;
