@@ -166,6 +166,18 @@ io.on('connection', (socket) => {
     broadcast();
   });
 
+  socket.on('promote_next', ({ fromCourtId, toCourtId }) => {
+    fromCourtId = Number(fromCourtId);
+    toCourtId   = Number(toCourtId);
+    const next  = state.next[fromCourtId];
+    const court = state.courts[toCourtId];
+    if (!next || !court || next.players.length === 0) return;
+    if (court.players.length > 0 || court.playing) return;
+    court.players = [...next.players];
+    next.players  = [];
+    broadcast();
+  });
+
   socket.on('start_game', (courtId) => {
     courtId = Number(courtId);
     const court = state.courts[courtId];

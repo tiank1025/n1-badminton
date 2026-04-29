@@ -624,11 +624,13 @@ function buildNextCourt(id) {
 
   let actions = '';
   if (isAdmin) {
-    if (canFill) {
+    if (count === 4) {
+      actions = `<button class="c-btn fill" style="background:${col}" onclick="showPromoteModal(${id})">→ Send to Court 上场</button>`;
+    } else if (canFill) {
       actions = `
         <button class="c-btn fill" style="background:${col};opacity:0.85" onclick="socket.emit('fill_next',${id})">Auto 自动</button>
         <button class="c-btn eq" onclick="showMfModal(${id},'next')">Pick 手动选人</button>`;
-    } else if (count < 4) {
+    } else {
       actions = `<button class="c-btn dim" disabled>Waiting for players 等待球员</button>`;
     }
   } else if (count < 4) {
@@ -827,7 +829,33 @@ function showAssignModal(name) {
   }).join('');
   openModal('assign-modal');
 }
-function hideAssignModal() { closeModal('assign-modal'); assigningPlayer = null; }
+function hideAssignModal() { closeModal('assign-modal'); assigningPlayer = null; promoteFromId = null; }
+
+// ── Promote on-deck to court ──────────────────────────
+
+let promoteFromId = null;
+
+function showPromoteModal(fromId) {
+  promoteFromId  = fromId;
+  assigningPlayer = null;
+  const empty = IDS.filter(id => state.courts[id]?.players.length === 0 && !state.courts[id]?.playing);
+  document.getElementById('assign-sub').textContent =
+    `Select empty court for On-Deck ${fromId} / 选择目标空场地`;
+  document.getElementById('assign-courts').innerHTML = empty.length
+    ? empty.map(id => `
+        <button class="court-opt" style="background:${COLORS[id]}" onclick="doPromote(${id})">
+          <span>Court ${id} 场地${id}</span>
+          <span class="court-opt-spots">Empty 空场</span>
+        </button>`).join('')
+    : `<p style="text-align:center;color:var(--s400);padding:16px 0">No empty courts / 暂无空场</p>`;
+  openModal('assign-modal');
+}
+
+function doPromote(toCourtId) {
+  if (!promoteFromId) return;
+  socket.emit('promote_next', { fromCourtId: promoteFromId, toCourtId });
+  hideAssignModal();
+}
 function doAssign(courtId) {
   if (!assigningPlayer) return;
   socket.emit('assign_player', { courtId, name: assigningPlayer });
