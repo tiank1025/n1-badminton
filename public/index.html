@@ -321,6 +321,32 @@
       flex-shrink: 0; line-height: 1.5;
     }
 
+    /* ── Manual fill modal ──────────────────────── */
+    .mf-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 11px;
+      border: 2px solid var(--s200); background: var(--s50);
+      margin-bottom: 6px; cursor: pointer;
+      transition: all 0.15s; user-select: none;
+    }
+    .mf-item.sel { background: var(--g50); border-color: var(--g500); }
+    .mf-item.disabled { opacity: 0.38; cursor: default; }
+    .mf-check {
+      width: 20px; height: 20px; border-radius: 6px;
+      border: 2px solid var(--s300, #cbd5e1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0; background: white;
+      transition: all 0.15s;
+    }
+    .mf-item.sel .mf-check { background: var(--g500); border-color: var(--g500); color: white; }
+    .mf-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--s700); }
+    .mf-item.sel .mf-name { color: var(--g700); }
+    .mf-counter {
+      text-align: center; font-size: 13px; color: var(--s500);
+      margin-bottom: 14px;
+    }
+    .mf-counter span { font-weight: 700; color: var(--g700); }
+
     /* ── Admin lock button ──────────────────────── */
     .admin-btn {
       background: rgba(255,255,255,0.12);
@@ -447,6 +473,20 @@
   </div>
 </div>
 
+<!-- ── Manual Fill Modal ────────────────────────────── -->
+<div class="overlay" id="mf-modal" onclick="if(event.target===this)hideMfModal()">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title" id="mf-title">Pick Players 手动选人</div>
+    <div class="mf-counter" id="mf-counter"></div>
+    <div id="mf-list"></div>
+    <div class="m-row" style="margin-top:4px">
+      <button class="m-btn cancel" onclick="hideMfModal()">Cancel 取消</button>
+      <button class="m-btn ok" id="mf-confirm" onclick="submitMf()">Confirm 确认</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── PIN Modal ─────────────────────────────────────── -->
 <div class="overlay" id="pin-modal" onclick="if(event.target===this)hidePinModal()">
   <div class="modal">
@@ -567,7 +607,9 @@ function buildCourt(id) {
         <button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue 结束排队</button>
         <button class="c-btn el" onclick="endGame(${id},false)">✕ Clear 离场</button>`;
     } else if (canFill) {
-      actions = `<button class="c-btn fill" style="background:${col}" onclick="socket.emit('fill_court',${id})">Fill Court 叫人上场 ▶</button>`;
+      actions = `
+        <button class="c-btn fill" style="background:${col}" onclick="socket.emit('fill_court',${id})">Auto 自动</button>
+        <button class="c-btn eq" onclick="showMfModal(${id})">Pick 手动选人</button>`;
     } else {
       const msg = count === 0 ? 'Waiting for players 等待球员' : `${count}/4 – need more 等待更多`;
       actions = `<button class="c-btn dim" disabled>${msg}</button>`;
@@ -714,6 +756,54 @@ function doAssign(courtId) {
   if (!assigningPlayer) return;
   socket.emit('assign_player', { courtId, name: assigningPlayer });
   hideAssignModal();
+}
+
+// ── Manual Fill ───────────────────────────────────────
+
+let mfCourtId = null;
+let mfSelected = new Set();
+let mfSpots = 0;
+
+function showMfModal(courtId) {
+  mfCourtId = courtId;
+  mfSelected = new Set();
+  mfSpots = 4 - (state.courts[courtId]?.players.length || 0);
+  document.getElementById('mf-title').textContent = `Pick Players – Court ${courtId} 场地${courtId}`;
+  renderMfList();
+  openModal('mf-modal');
+}
+function hideMfModal() { closeModal('mf-modal'); }
+
+function toggleMf(name) {
+  if (mfSelected.has(name)) {
+    mfSelected.delete(name);
+  } else if (mfSelected.size < mfSpots) {
+    mfSelected.add(name);
+  }
+  renderMfList();
+}
+
+function renderMfList() {
+  const remaining = mfSpots - mfSelected.size;
+  document.getElementById('mf-counter').innerHTML =
+    `Select <span>${remaining}</span> more player${remaining!==1?'s':''} &nbsp;·&nbsp; 还需选 <span>${remaining}</span> 人`;
+  document.getElementById('mf-confirm').disabled = mfSelected.size === 0;
+
+  document.getElementById('mf-list').innerHTML = state.queue.map(name => {
+    const sel = mfSelected.has(name);
+    const full = !sel && mfSelected.size >= mfSpots;
+    return `<div class="mf-item${sel?' sel':''}${full?' disabled':''}" onclick="${full?'':'toggleMf(\''+escJs(name)+'\')'}">
+      <div class="mf-check">${sel?'✓':''}</div>
+      <span class="mf-name">${esc(name)}</span>
+      ${lvlBadge(name)}
+    </div>`;
+  }).join('');
+}
+
+function submitMf() {
+  if (!mfCourtId || mfSelected.size === 0) return;
+  socket.emit('manual_assign', { courtId: mfCourtId, names: [...mfSelected] });
+  hideMfModal();
 }
 
 // ── Admin PIN ─────────────────────────────────────────

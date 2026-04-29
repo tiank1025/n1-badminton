@@ -109,6 +109,21 @@ io.on('connection', (socket) => {
     broadcast();
   });
 
+  socket.on('manual_assign', ({ courtId, names }) => {
+    courtId = Number(courtId);
+    const court = state.courts[courtId];
+    if (!court) return;
+    const spots = 4 - court.players.length;
+    const toAdd = (names || [])
+      .map(n => sanitize(n))
+      .filter(n => n && state.queue.includes(n) && !court.players.includes(n))
+      .slice(0, spots);
+    const added = new Set(toAdd);
+    state.queue = state.queue.filter(n => !added.has(n));
+    court.players.push(...toAdd);
+    broadcast();
+  });
+
   socket.on('assign_player', ({ courtId, name }) => {
     courtId = Number(courtId);
     name = sanitize(name);
