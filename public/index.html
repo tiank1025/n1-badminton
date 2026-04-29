@@ -675,9 +675,7 @@ function buildCourt(id) {
   let actions = '';
   if (isAdmin) {
     if (c.playing || full) {
-      actions = `
-        <button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue 结束排队</button>
-        <button class="c-btn el" onclick="endGame(${id},false)">✕ Clear 离场</button>`;
+      actions = `<button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue 结束排队</button>`;
     } else if (canFill) {
       actions = `
         <button class="c-btn fill" style="background:${col}" onclick="socket.emit('fill_court',${id})">Auto 自动</button>
