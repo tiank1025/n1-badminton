@@ -321,6 +321,14 @@
       flex-shrink: 0; line-height: 1.5;
     }
 
+    /* ── Next (on-deck) court cards ────────────── */
+    .next-card {
+      border: 2px dashed var(--s300, #cbd5e1);
+      box-shadow: none;
+      opacity: 0.92;
+    }
+    .next-card .court-head { opacity: 0.78; }
+
     /* ── Manual fill modal ──────────────────────── */
     .mf-item {
       display: flex; align-items: center; gap: 10px;
@@ -429,6 +437,13 @@
   </div>
   <div class="courts-grid" id="courts-grid"></div>
 
+  <!-- On Deck -->
+  <div class="sec-label" style="margin-top:6px">
+    On Deck 候场
+    <div class="sec-chips" id="next-summary"></div>
+  </div>
+  <div class="courts-grid" id="next-grid"></div>
+
   <!-- Queue -->
   <div class="sec-label">Waiting Queue 等候队列</div>
   <div class="q-card">
@@ -518,7 +533,7 @@ const LEVEL_COLORS = {
 
 const ADMIN_PIN = '1234'; // ← change this to your own PIN
 
-let state = { courts: {}, queue: [], players: {} };
+let state = { courts: {}, next: {}, queue: [], players: {} };
 let myName  = localStorage.getItem('bmt_name')  || '';
 let myLevel = localStorage.getItem('bmt_level') || 'D';
 let isAdmin = localStorage.getItem('bmt_admin') === '1';
@@ -534,6 +549,7 @@ function render() {
   renderHowto();
   renderSummary();
   renderCourts();
+  renderNext();
   renderQueue();
   renderMyStatus();
   renderAdminBtn();
@@ -574,6 +590,60 @@ function renderSummary() {
 
 function renderCourts() {
   document.getElementById('courts-grid').innerHTML = IDS.map(buildCourt).join('');
+}
+
+function renderNext() {
+  const staged = IDS.filter(id => state.next[id]?.players.length > 0);
+  let chips = '';
+  if (staged.length) chips = staged.map(id =>
+    `<span class="sec-chip">⏳ Court ${id}: ${state.next[id].players.length}/4</span>`
+  ).join('');
+  document.getElementById('next-summary').innerHTML = chips;
+  document.getElementById('next-grid').innerHTML = IDS.map(buildNextCourt).join('');
+}
+
+function buildNextCourt(id) {
+  const c = state.next[id];
+  if (!c) return '';
+  const col   = COLORS[id];
+  const count = c.players.length;
+  const canFill = count < 4 && state.queue.length > 0;
+
+  const cells = Array.from({length:4}, (_,i) => {
+    const p = c.players[i];
+    if (p) {
+      const me = p === myName;
+      return `<div class="p-cell filled${me?' me':''}">
+        <span class="p-name${me?' me':''}" style="max-width:50px" title="${esc(p)}">${esc(p)}</span>
+        ${lvlBadge(p)}
+        ${isAdmin ? `<button class="p-rm" onclick="removeFromNext(${id},'${escJs(p)}')">×</button>` : ''}
+      </div>`;
+    }
+    return `<div class="p-cell empty"><span class="p-empty-txt">Empty 空位</span></div>`;
+  }).join('');
+
+  let actions = '';
+  if (isAdmin) {
+    if (canFill) {
+      actions = `
+        <button class="c-btn fill" style="background:${col};opacity:0.85" onclick="socket.emit('fill_next',${id})">Auto 自动</button>
+        <button class="c-btn eq" onclick="showMfModal(${id},'next')">Pick 手动选人</button>`;
+    } else if (count < 4) {
+      actions = `<button class="c-btn dim" disabled>Waiting for players 等待球员</button>`;
+    }
+  } else if (count < 4) {
+    actions = `<button class="c-btn dim" disabled>${count === 0 ? 'On Deck 候场' : `${count}/4`}</button>`;
+  }
+
+  return `
+    <div class="court-card next-card">
+      <div class="court-head" style="background:${col}">
+        <span class="court-name">Court ${id} 场地${id}</span>
+        <span class="court-badge">⏳ Next 候场</span>
+      </div>
+      <div class="p-grid">${cells}</div>
+      ${actions ? `<div class="c-actions">${actions}</div>` : ''}
+    </div>`;
 }
 
 function buildCourt(id) {
@@ -667,10 +737,13 @@ function renderMyStatus() {
     el.innerHTML = `<span style="color:rgba(255,255,255,0.45);font-size:12px;cursor:pointer" onclick="showJoinModal()">Tap to register 点此登记</span>`;
     return;
   }
-  const onCourt = IDS.find(id => state.courts[id]?.players.includes(myName));
-  const qPos    = state.queue.indexOf(myName);
+  const onCourt  = IDS.find(id => state.courts[id]?.players.includes(myName));
+  const onDeck   = IDS.find(id => state.next[id]?.players.includes(myName));
+  const qPos     = state.queue.indexOf(myName);
   if (onCourt) {
     el.innerHTML = `<span style="color:#86efac;font-size:12px">✓ Court ${onCourt} 场地${onCourt}</span>`;
+  } else if (onDeck) {
+    el.innerHTML = `<span style="color:#fdba74;font-size:12px">⏳ On Deck Court ${onDeck} 候场${onDeck}</span>`;
   } else if (qPos >= 0) {
     el.innerHTML = `<span style="color:#fde68a;font-size:12px">Queue #${qPos+1} 第${qPos+1}位</span>`;
   } else {
@@ -689,6 +762,9 @@ function removeFromCourt(courtId, name) {
 function removeFromQueue(name) {
   socket.emit('remove_from_queue', name);
   if (name === myName) { myName = ''; localStorage.removeItem('bmt_name'); }
+}
+function removeFromNext(courtId, name) {
+  socket.emit('remove_from_next', { courtId, name });
 }
 
 // ── Level helpers ─────────────────────────────────────
@@ -761,14 +837,18 @@ function doAssign(courtId) {
 // ── Manual Fill ───────────────────────────────────────
 
 let mfCourtId = null;
+let mfType = 'court';
 let mfSelected = new Set();
 let mfSpots = 0;
 
-function showMfModal(courtId) {
+function showMfModal(courtId, type = 'court') {
   mfCourtId = courtId;
+  mfType = type;
   mfSelected = new Set();
-  mfSpots = 4 - (state.courts[courtId]?.players.length || 0);
-  document.getElementById('mf-title').textContent = `Pick Players – Court ${courtId} 场地${courtId}`;
+  const src = type === 'next' ? state.next[courtId] : state.courts[courtId];
+  mfSpots = 4 - (src?.players.length || 0);
+  const label = type === 'next' ? `On Deck – Court ${courtId} 候场场地${courtId}` : `Pick Players – Court ${courtId} 场地${courtId}`;
+  document.getElementById('mf-title').textContent = label;
   renderMfList();
   openModal('mf-modal');
 }
@@ -802,7 +882,8 @@ function renderMfList() {
 
 function submitMf() {
   if (!mfCourtId || mfSelected.size === 0) return;
-  socket.emit('manual_assign', { courtId: mfCourtId, names: [...mfSelected] });
+  const event = mfType === 'next' ? 'manual_assign_next' : 'manual_assign';
+  socket.emit(event, { courtId: mfCourtId, names: [...mfSelected] });
   hideMfModal();
 }
 

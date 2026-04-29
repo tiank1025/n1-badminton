@@ -14,8 +14,9 @@ const LEVELS = ['A', 'B', 'C', 'D+', 'D', 'D-', 'E+', 'E', 'E-'];
 
 const state = {
   courts: Object.fromEntries(COURT_IDS.map(id => [id, { players: [], playing: false }])),
-  queue: [],    // string[] of names
-  players: {},  // { [name]: level } — persistent level registry
+  next:   Object.fromEntries(COURT_IDS.map(id => [id, { players: [] }])),
+  queue:   [],
+  players: {},
 };
 
 let connectedCount = 0;
@@ -30,23 +31,18 @@ function sanitize(name) {
 
 function isNameUsed(name) {
   if (state.queue.includes(name)) return true;
-  return COURT_IDS.some(id => state.courts[id].players.includes(name));
+  if (COURT_IDS.some(id => state.courts[id].players.includes(name))) return true;
+  if (COURT_IDS.some(id => state.next[id].players.includes(name))) return true;
+  return false;
 }
 
 function lvlIdx(name) {
   const i = LEVELS.indexOf(state.players[name]);
-  return i >= 0 ? i : 4; // default to D if unknown
+  return i >= 0 ? i : 4;
 }
 
-// Fill court from queue using smart level-matching:
-// First player is always taken in queue order.
-// Each subsequent slot scans the queue in order and picks the first person
-// whose level keeps the court's total spread within 3 tiers.
-// If no compatible player is found, falls back to strict queue order.
-function smartFill(courtId) {
-  const court = state.courts[courtId];
-  if (!court) return;
-  const needed = 4 - court.players.length;
+function smartFillInto(targetPlayers) {
+  const needed = 4 - targetPlayers.length;
   if (needed <= 0 || state.queue.length === 0) return;
 
   const pool = [...state.queue];
@@ -63,12 +59,8 @@ function smartFill(courtId) {
       let foundIdx = -1;
       for (let i = 0; i < pool.length; i++) {
         const l = lvlIdx(pool[i]);
-        if (Math.max(maxL, l) - Math.min(minL, l) <= 3) {
-          foundIdx = i;
-          break;
-        }
+        if (Math.max(maxL, l) - Math.min(minL, l) <= 3) { foundIdx = i; break; }
       }
-      // Fall back to queue order if nobody fits within 3 tiers
       if (foundIdx === -1) foundIdx = 0;
       chosen.push(...pool.splice(foundIdx, 1));
     }
@@ -76,7 +68,7 @@ function smartFill(courtId) {
 
   const chosenSet = new Set(chosen);
   state.queue = state.queue.filter(n => !chosenSet.has(n));
-  court.players.push(...chosen);
+  targetPlayers.push(...chosen);
 }
 
 io.on('connection', (socket) => {
@@ -105,8 +97,14 @@ io.on('connection', (socket) => {
 
   socket.on('fill_court', (courtId) => {
     courtId = Number(courtId);
-    smartFill(courtId);
-    broadcast();
+    const court = state.courts[courtId];
+    if (court) { smartFillInto(court.players); broadcast(); }
+  });
+
+  socket.on('fill_next', (courtId) => {
+    courtId = Number(courtId);
+    const next = state.next[courtId];
+    if (next) { smartFillInto(next.players); broadcast(); }
   });
 
   socket.on('manual_assign', ({ courtId, names }) => {
@@ -114,13 +112,26 @@ io.on('connection', (socket) => {
     const court = state.courts[courtId];
     if (!court) return;
     const spots = 4 - court.players.length;
-    const toAdd = (names || [])
-      .map(n => sanitize(n))
+    const toAdd = (names || []).map(n => sanitize(n))
       .filter(n => n && state.queue.includes(n) && !court.players.includes(n))
       .slice(0, spots);
     const added = new Set(toAdd);
     state.queue = state.queue.filter(n => !added.has(n));
     court.players.push(...toAdd);
+    broadcast();
+  });
+
+  socket.on('manual_assign_next', ({ courtId, names }) => {
+    courtId = Number(courtId);
+    const next = state.next[courtId];
+    if (!next) return;
+    const spots = 4 - next.players.length;
+    const toAdd = (names || []).map(n => sanitize(n))
+      .filter(n => n && state.queue.includes(n) && !next.players.includes(n))
+      .slice(0, spots);
+    const added = new Set(toAdd);
+    state.queue = state.queue.filter(n => !added.has(n));
+    next.players.push(...toAdd);
     broadcast();
   });
 
@@ -144,13 +155,21 @@ io.on('connection', (socket) => {
     broadcast();
   });
 
+  socket.on('remove_from_next', ({ courtId, name }) => {
+    courtId = Number(courtId);
+    name = sanitize(name);
+    const next = state.next[courtId];
+    if (!next) return;
+    const wasIn = next.players.includes(name);
+    next.players = next.players.filter(n => n !== name);
+    if (wasIn) state.queue.push(name);
+    broadcast();
+  });
+
   socket.on('start_game', (courtId) => {
     courtId = Number(courtId);
     const court = state.courts[courtId];
-    if (court && court.players.length === 4) {
-      court.playing = true;
-      broadcast();
-    }
+    if (court && court.players.length === 4) { court.playing = true; broadcast(); }
   });
 
   socket.on('end_game', ({ courtId, toQueue }) => {
@@ -160,6 +179,12 @@ io.on('connection', (socket) => {
     if (toQueue) state.queue.push(...court.players);
     court.players = [];
     court.playing = false;
+    // Auto-load staged players if any
+    const next = state.next[courtId];
+    if (next && next.players.length > 0) {
+      court.players = [...next.players];
+      next.players = [];
+    }
     broadcast();
   });
 });
