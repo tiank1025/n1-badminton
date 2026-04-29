@@ -355,7 +355,7 @@
       <div class="hd-sub">Brisbane · Courts 6 – 10</div>
     </div>
     <div class="hd-right">
-      <div class="hd-online">👥 <span id="online-count">—</span> 人在线</div>
+      <div class="hd-online">👥 <span id="online-count">—</span> online 在线</div>
       <div id="my-status"></div>
     </div>
   </div>
@@ -368,15 +368,15 @@
   <div class="howto" id="howto">
     <div class="howto-icon">💡</div>
     <div class="howto-body">
-      <div class="howto-title">怎么使用</div>
+      <div class="howto-title">How to Use 怎么使用</div>
       <div class="howto-steps">
-        <span class="howto-step">① 加入队列</span>
+        <span class="howto-step">① Join Queue 加入队列</span>
         <span class="howto-arrow">→</span>
-        <span class="howto-step">② 等待叫人上场</span>
+        <span class="howto-step">② Wait to be called 等待叫人上场</span>
         <span class="howto-arrow">→</span>
-        <span class="howto-step">③ 打完点结束</span>
+        <span class="howto-step">③ End game when done 打完点结束</span>
         <span class="howto-arrow">→</span>
-        <span class="howto-step">④ 重新排队</span>
+        <span class="howto-step">④ Re-join queue 重新排队</span>
       </div>
     </div>
     <button class="howto-close" onclick="dismissHowto()">✕</button>
@@ -384,20 +384,20 @@
 
   <!-- Courts -->
   <div class="sec-label">
-    场地状态
+    Courts 场地状态
     <div class="sec-chips" id="court-summary"></div>
   </div>
   <div class="courts-grid" id="courts-grid"></div>
 
   <!-- Queue -->
-  <div class="sec-label">等候队列</div>
+  <div class="sec-label">Waiting Queue 等候队列</div>
   <div class="q-card">
     <div class="q-head">
       <div class="q-title-row">
-        <span class="q-title">排队中</span>
+        <span class="q-title">Waiting 排队中</span>
         <span class="q-badge" id="q-badge">0 人</span>
       </div>
-      <button class="join-btn" onclick="showJoinModal()">+ 加入队列</button>
+      <button class="join-btn" onclick="showJoinModal()">+ Join Queue 加入队列</button>
     </div>
     <div id="q-list"></div>
   </div>
@@ -408,16 +408,16 @@
 <div class="overlay" id="join-modal" onclick="if(event.target===this)hideJoinModal()">
   <div class="modal">
     <div class="m-handle"></div>
-    <div class="m-title">加入等候队列</div>
-    <div class="m-sub">输入你的名字，等待被叫上场</div>
+    <div class="m-title">Join Queue 加入等候队列</div>
+    <div class="m-sub">Enter your name to join / 输入名字加入队列</div>
     <input class="m-input" id="name-input" type="text" placeholder="你的名字 / Your name"
       maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false"
       onkeydown="if(event.key==='Enter')submitJoin()">
-    <div class="lvl-section-label">选择你的羽毛球水平</div>
+    <div class="lvl-section-label">Select your level 选择羽毛球水平</div>
     <div class="lvl-grid" id="lvl-picker"></div>
     <div class="m-row">
-      <button class="m-btn cancel" onclick="hideJoinModal()">取消</button>
-      <button class="m-btn ok" onclick="submitJoin()">加入队列</button>
+      <button class="m-btn cancel" onclick="hideJoinModal()">Cancel 取消</button>
+      <button class="m-btn ok" onclick="submitJoin()">Join 加入</button>
     </div>
   </div>
 </div>
@@ -426,10 +426,10 @@
 <div class="overlay" id="assign-modal" onclick="if(event.target===this)hideAssignModal()">
   <div class="modal">
     <div class="m-handle"></div>
-    <div class="m-title">指定上场场地</div>
+    <div class="m-title">Assign to Court 指定上场场地</div>
     <div class="m-sub" id="assign-sub"></div>
     <div id="assign-courts"></div>
-    <button class="m-cancel-full" onclick="hideAssignModal()">取消</button>
+    <button class="m-cancel-full" onclick="hideAssignModal()">Cancel 取消</button>
   </div>
 </div>
 
@@ -479,10 +479,10 @@ function renderSummary() {
   const idle  = IDS.length - live - ready;
   const q     = state.queue.length;
   let html = '';
-  if (live)  html += `<span class="sec-chip on">● ${live} 游戏中</span>`;
-  if (ready) html += `<span class="sec-chip">◎ ${ready} 准备中</span>`;
-  if (idle)  html += `<span class="sec-chip">○ ${idle} 空闲</span>`;
-  if (q)     html += `<span class="sec-chip">⏳ 队列 ${q} 人</span>`;
+  if (live)  html += `<span class="sec-chip on">● ${live} Live 游戏中</span>`;
+  if (ready) html += `<span class="sec-chip">◎ ${ready} Ready 准备中</span>`;
+  if (idle)  html += `<span class="sec-chip">○ ${idle} Idle 空闲</span>`;
+  if (q)     html += `<span class="sec-chip">⏳ ${q} in queue 排队</span>`;
   document.getElementById('court-summary').innerHTML = html;
 }
 
@@ -498,7 +498,7 @@ function buildCourt(id) {
   const full  = count === 4;
   const canFill = count < 4 && state.queue.length > 0;
 
-  const statusLabel = c.playing ? '● 游戏中' : full ? '◎ 准备中' : `${count}/4`;
+  const statusLabel = c.playing ? '● Live 游戏中' : full ? '◎ Ready 准备中' : `${count}/4`;
   const statusClass = (c.playing || full) ? 'live' : '';
 
   const cells = Array.from({length:4}, (_,i) => {
@@ -511,25 +511,25 @@ function buildCourt(id) {
         <button class="p-rm" onclick="removeFromCourt(${id},'${escJs(p)}')">×</button>
       </div>`;
     }
-    return `<div class="p-cell empty"><span class="p-empty-txt">空位</span></div>`;
+    return `<div class="p-cell empty"><span class="p-empty-txt">Empty 空位</span></div>`;
   }).join('');
 
   let actions = '';
   if (c.playing || full) {
     actions = `
-      <button class="c-btn eq" onclick="endGame(${id},true)">↩ 结束排队</button>
-      <button class="c-btn el" onclick="endGame(${id},false)">✕ 离场</button>`;
+      <button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue 结束排队</button>
+      <button class="c-btn el" onclick="endGame(${id},false)">✕ Clear 离场</button>`;
   } else if (canFill) {
-    actions = `<button class="c-btn fill" style="background:${col}" onclick="socket.emit('fill_court',${id})">叫人上场 ▶</button>`;
+    actions = `<button class="c-btn fill" style="background:${col}" onclick="socket.emit('fill_court',${id})">Fill Court 叫人上场 ▶</button>`;
   } else {
-    const msg = count === 0 ? '等待球员加入队列' : `已有 ${count} 人，等待更多`;
+    const msg = count === 0 ? 'Waiting for players 等待球员' : `${count}/4 – need more 等待更多`;
     actions = `<button class="c-btn dim" disabled>${msg}</button>`;
   }
 
   return `
     <div class="court-card${(c.playing||full)?' live':''}">
       <div class="court-head" style="background:${col}">
-        <span class="court-name">场地 ${id}</span>
+        <span class="court-name">Court ${id} 场地${id}</span>
         <span class="court-badge ${statusClass}">${statusLabel}</span>
       </div>
       <div class="p-grid">${cells}</div>
@@ -540,13 +540,13 @@ function buildCourt(id) {
 function renderQueue() {
   const badge = document.getElementById('q-badge');
   const list  = document.getElementById('q-list');
-  badge.textContent = `${state.queue.length} 人`;
+  badge.textContent = `${state.queue.length} players 人`;
 
   if (!state.queue.length) {
     list.innerHTML = `<div class="q-empty">
       <div class="q-empty-icon">🏸</div>
-      <div>暂无人等候</div>
-      <div class="q-empty-hint">点击「加入队列」开始排队</div>
+      <div>No one waiting 暂无人等候</div>
+      <div class="q-empty-hint">Tap "+ Join Queue" to start / 点击加入队列</div>
     </div>`;
     return;
   }
@@ -569,15 +569,15 @@ function renderQueue() {
 function renderMyStatus() {
   const el = document.getElementById('my-status');
   if (!myName) {
-    el.innerHTML = `<span style="color:rgba(255,255,255,0.45);font-size:12px;cursor:pointer" onclick="showJoinModal()">点此登记名字</span>`;
+    el.innerHTML = `<span style="color:rgba(255,255,255,0.45);font-size:12px;cursor:pointer" onclick="showJoinModal()">Tap to register 点此登记</span>`;
     return;
   }
   const onCourt = IDS.find(id => state.courts[id]?.players.includes(myName));
   const qPos    = state.queue.indexOf(myName);
   if (onCourt) {
-    el.innerHTML = `<span style="color:#86efac;font-size:12px">✓ 正在场地 ${onCourt}</span>`;
+    el.innerHTML = `<span style="color:#86efac;font-size:12px">✓ Court ${onCourt} 场地${onCourt}</span>`;
   } else if (qPos >= 0) {
-    el.innerHTML = `<span style="color:#fde68a;font-size:12px">队列第 ${qPos+1} 位</span>`;
+    el.innerHTML = `<span style="color:#fde68a;font-size:12px">Queue #${qPos+1} 第${qPos+1}位</span>`;
   } else {
     el.innerHTML = `<span style="color:rgba(255,255,255,0.5);font-size:12px">${esc(myName)}</span>`;
   }
@@ -645,13 +645,13 @@ function submitJoin() {
 
 function showAssignModal(name) {
   assigningPlayer = name;
-  document.getElementById('assign-sub').textContent = `为「${name}」选择上场场地`;
+  document.getElementById('assign-sub').textContent = `Assign court for ${name} / 为「${name}」选择场地`;
   const avail = IDS.filter(id => state.courts[id]?.players.length < 4);
   document.getElementById('assign-courts').innerHTML = avail.map(id => {
     const spots = 4 - state.courts[id].players.length;
     return `<button class="court-opt" style="background:${COLORS[id]}" onclick="doAssign(${id})">
-      <span>场地 ${id}</span>
-      <span class="court-opt-spots">剩 ${spots} 个空位</span>
+      <span>Court ${id} 场地${id}</span>
+      <span class="court-opt-spots">${spots} spots left 剩${spots}位</span>
     </button>`;
   }).join('');
   openModal('assign-modal');
