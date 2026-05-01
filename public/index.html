@@ -37,6 +37,16 @@
     .hd-title { font-size: 18px; font-weight: 800; letter-spacing: -0.4px; }
     .hd-sub { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; }
     .hd-right { text-align: right; }
+    .hd-join-btn {
+      background: white; color: var(--g800);
+      border: none; cursor: pointer;
+      padding: 10px 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 800; font-family: inherit;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .hd-join-btn:hover { opacity: 0.88; }
+    .hd-join-btn:active { transform: scale(0.97); }
     .hd-online { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 3px; }
     #my-status { font-size: 12px; font-weight: 600; }
 
@@ -402,6 +412,7 @@
       <div class="hd-title">🏸 N1 Badminton Social</div>
       <div class="hd-sub">Brisbane · Courts 6 – 10</div>
     </div>
+    <button class="hd-join-btn" onclick="showJoinModal()">+ Join Queue</button>
     <div class="hd-right">
       <div class="hd-online">👥 <span id="online-count">—</span> online</div>
       <div id="my-status"></div>
