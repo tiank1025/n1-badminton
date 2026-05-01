@@ -17,6 +17,7 @@ const state = {
   next:   Object.fromEntries(COURT_IDS.map(id => [id, { players: [] }])),
   queue:   [],
   players: {},
+  pairs:   {}, // pairs[name] = partnerName (mutual)
 };
 
 let connectedCount = 0;
@@ -48,9 +49,23 @@ function smartFillInto(targetPlayers) {
   const pool = [...state.queue];
   const chosen = [];
 
+  function tryGrabPair(name) {
+    const partner = state.pairs[name];
+    if (partner && chosen.length < needed) {
+      const pIdx = pool.indexOf(partner);
+      if (pIdx !== -1) {
+        pool.splice(pIdx, 1);
+        chosen.push(partner);
+      }
+    }
+  }
+
   for (let slot = 0; slot < needed && pool.length > 0; slot++) {
     if (chosen.length === 0) {
-      chosen.push(pool.shift());
+      const first = pool.shift();
+      chosen.push(first);
+      tryGrabPair(first);
+      if (chosen.length > 1) slot++;
     } else {
       const lvls = chosen.map(lvlIdx);
       const minL = Math.min(...lvls);
@@ -62,7 +77,10 @@ function smartFillInto(targetPlayers) {
         if (Math.max(maxL, l) - Math.min(minL, l) <= 3) { foundIdx = i; break; }
       }
       if (foundIdx === -1) foundIdx = 0;
-      chosen.push(...pool.splice(foundIdx, 1));
+      const next = pool.splice(foundIdx, 1)[0];
+      chosen.push(next);
+      tryGrabPair(next);
+      if (chosen.length > slot + 1) slot++;
     }
   }
 
@@ -81,17 +99,41 @@ io.on('connection', (socket) => {
     io.emit('connected_count', connectedCount);
   });
 
-  socket.on('join_queue', ({ name, level }) => {
+  socket.on('join_queue', ({ name, level, partner }) => {
     name = sanitize(name);
+    partner = sanitize(partner || '');
     if (!name || isNameUsed(name)) return;
     if (LEVELS.includes(level)) state.players[name] = level;
     state.queue.push(name);
+    if (partner && partner !== name) {
+      state.pairs[name] = partner;
+      if (state.pairs[partner] === name) {
+        // already mutual — confirmed
+      } else {
+        state.pairs[partner] = name;
+      }
+    }
     broadcast();
   });
 
   socket.on('remove_from_queue', (name) => {
     name = sanitize(name);
     state.queue = state.queue.filter(n => n !== name);
+    const partner = state.pairs[name];
+    if (partner) {
+      delete state.pairs[name];
+      if (state.pairs[partner] === name) delete state.pairs[partner];
+    }
+    broadcast();
+  });
+
+  socket.on('unlink_pair', (name) => {
+    name = sanitize(name);
+    const partner = state.pairs[name];
+    if (partner) {
+      delete state.pairs[name];
+      if (state.pairs[partner] === name) delete state.pairs[partner];
+    }
     broadcast();
   });
 
