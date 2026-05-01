@@ -22,7 +22,12 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
-      background: linear-gradient(160deg, #ecfdf5 0%, #f0fdf4 40%, #f8fafc 100%);
+      background-color: #f0fdf4;
+      background-image:
+        url('/bg-shuttle.svg'),
+        linear-gradient(160deg, #ecfdf5 0%, #f0fdf4 40%, #f8fafc 100%);
+      background-size: 80px 104px, cover;
+      background-repeat: repeat, no-repeat;
       min-height: 100vh;
       color: var(--s800);
     }
@@ -34,6 +39,23 @@
       padding: 14px 16px 12px;
       position: sticky; top: 0; z-index: 40;
       box-shadow: 0 4px 24px rgba(20,83,45,0.4), 0 1px 0 rgba(255,255,255,0.06) inset;
+      overflow: hidden;
+    }
+    .hd-deco {
+      position: absolute;
+      right: 180px; top: -28px;
+      width: 90px; height: 126px;
+      opacity: 0.1;
+      pointer-events: none;
+      transform: rotate(-12deg);
+    }
+    .hd-deco2 {
+      position: absolute;
+      left: 42%; top: -20px;
+      width: 60px; height: 84px;
+      opacity: 0.06;
+      pointer-events: none;
+      transform: rotate(8deg);
     }
     .hd { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
     .hd-title { font-size: 20px; font-weight: 900; letter-spacing: 0.2px; font-family: 'Fredoka One', cursive; }
@@ -455,6 +477,29 @@
 
 <!-- ── Header ──────────────────────────────────────── -->
 <header>
+  <svg class="hd-deco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140" fill="none">
+    <circle cx="50" cy="128" r="10" fill="white"/>
+    <circle cx="50" cy="128" r="5" fill="white" opacity="0.6"/>
+    <line x1="50" y1="118" x2="12" y2="18" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="22" y2="13" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="35" y2="9" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="50" y2="8" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="65" y2="9" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="78" y2="13" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="88" y2="18" stroke="white" stroke-width="1.5"/>
+    <path d="M12 18 Q50 2 88 18" stroke="white" stroke-width="2.5"/>
+    <path d="M12 18 Q50 2 88 18 L50 118 Z" fill="white" opacity="0.08"/>
+  </svg>
+  <svg class="hd-deco2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140" fill="none">
+    <circle cx="50" cy="128" r="10" fill="white"/>
+    <line x1="50" y1="118" x2="12" y2="18" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="35" y2="9" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="50" y2="8" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="65" y2="9" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="88" y2="18" stroke="white" stroke-width="1.5"/>
+    <path d="M12 18 Q50 2 88 18" stroke="white" stroke-width="2.5"/>
+    <path d="M12 18 Q50 2 88 18 L50 118 Z" fill="white" opacity="0.08"/>
+  </svg>
   <div class="hd">
     <div>
       <div class="hd-title">🏸 N1 Badminton Social</div>
