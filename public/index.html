@@ -37,16 +37,17 @@
     .hd-title { font-size: 18px; font-weight: 800; letter-spacing: -0.4px; }
     .hd-sub { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; }
     .hd-right { text-align: right; }
-    .hd-join-btn {
-      background: white; color: var(--g800);
+    .main-join-btn {
+      display: block; width: 100%;
+      background: var(--g600); color: white;
       border: none; cursor: pointer;
-      padding: 10px 20px; border-radius: 10px;
-      font-size: 14px; font-weight: 800; font-family: inherit;
-      transition: opacity 0.15s, transform 0.1s;
-      white-space: nowrap;
+      padding: 14px; border-radius: 12px;
+      font-size: 16px; font-weight: 800; font-family: inherit;
+      margin-bottom: 14px;
+      transition: background 0.15s, transform 0.1s;
     }
-    .hd-join-btn:hover { opacity: 0.88; }
-    .hd-join-btn:active { transform: scale(0.97); }
+    .main-join-btn:hover { background: var(--g700); }
+    .main-join-btn:active { transform: scale(0.98); }
     .hd-online { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 3px; }
     #my-status { font-size: 12px; font-weight: 600; }
 
@@ -412,7 +413,6 @@
       <div class="hd-title">🏸 N1 Badminton Social</div>
       <div class="hd-sub">Brisbane · Courts 6 – 10</div>
     </div>
-    <button class="hd-join-btn" onclick="showJoinModal()">+ Join Queue</button>
     <div class="hd-right">
       <div class="hd-online">👥 <span id="online-count">—</span> online</div>
       <div id="my-status"></div>
@@ -436,6 +436,7 @@
     </div>
     <button class="howto-close" onclick="dismissHowto()">✕</button>
   </div>
+  <button class="main-join-btn" onclick="showJoinModal()">+ Join Queue</button>
 
   <!-- Courts -->
   <div class="sec-label">
