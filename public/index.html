@@ -431,7 +431,7 @@
 
   <!-- On Deck -->
   <div class="sec-label" style="margin-top:6px">
-    On Deck 候场
+    On Deck
     <div class="sec-chips" id="next-summary"></div>
   </div>
   <div class="courts-grid" id="next-grid"></div>
@@ -646,14 +646,14 @@ function buildNextCourt(id, slot) {
       actions = `<button class="c-btn dim" disabled>Waiting for players 等待球员</button>`;
     }
   } else if (count < 4) {
-    actions = `<button class="c-btn dim" disabled>${count === 0 ? 'On Deck 候场' : `${count}/4`}</button>`;
+    actions = `<button class="c-btn dim" disabled>${count === 0 ? 'On Deck' : `${count}/4`}</button>`;
   }
 
   return `
     <div class="court-card next-card">
       <div class="court-head" style="background:${col}">
-        <span class="court-name">On Deck ${slot} 候场${slot}</span>
-        <span class="court-badge">⏳ Next 候场</span>
+        <span class="court-name">On Deck ${slot}</span>
+        <span class="court-badge">⏳ Next</span>
       </div>
       <div class="p-grid">${cells}</div>
       ${actions ? `<div class="c-actions">${actions}</div>` : ''}
