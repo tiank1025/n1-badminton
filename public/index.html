@@ -606,14 +606,15 @@ function renderCourts() {
 function renderNext() {
   const staged = IDS.filter(id => state.next[id]?.players.length > 0);
   let chips = '';
-  if (staged.length) chips = staged.map(id =>
-    `<span class="sec-chip">⏳ Court ${id}: ${state.next[id].players.length}/4</span>`
-  ).join('');
+  if (staged.length) chips = staged.map(id => {
+    const slot = IDS.indexOf(id) + 1;
+    return `<span class="sec-chip">⏳ #${slot}: ${state.next[id].players.length}/4</span>`;
+  }).join('');
   document.getElementById('next-summary').innerHTML = chips;
-  document.getElementById('next-grid').innerHTML = IDS.map(buildNextCourt).join('');
+  document.getElementById('next-grid').innerHTML = IDS.map((id, i) => buildNextCourt(id, i + 1)).join('');
 }
 
-function buildNextCourt(id) {
+function buildNextCourt(id, slot) {
   const c = state.next[id];
   if (!c) return '';
   const col   = COLORS[id];
@@ -651,7 +652,7 @@ function buildNextCourt(id) {
   return `
     <div class="court-card next-card">
       <div class="court-head" style="background:${col}">
-        <span class="court-name">Court ${id} 场地${id}</span>
+        <span class="court-name">On Deck ${slot} 候场${slot}</span>
         <span class="court-badge">⏳ Next 候场</span>
       </div>
       <div class="p-grid">${cells}</div>
