@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>🏸 N1 Badminton Social</title>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -404,7 +405,10 @@
     <div class="hd-right">
       <div class="hd-online">👥 <span id="online-count">—</span> online 在线</div>
       <div id="my-status"></div>
-      <button class="admin-btn" id="admin-btn" onclick="onAdminBtnClick()">🔒 Admin</button>
+      <div style="display:flex;gap:6px;margin-top:5px">
+        <button class="admin-btn" style="margin-top:0" onclick="showQrModal()">📷 QR</button>
+        <button class="admin-btn" style="margin-top:0" id="admin-btn" onclick="onAdminBtnClick()">🔒 Admin</button>
+      </div>
     </div>
   </div>
 </header>
@@ -491,6 +495,17 @@
       <button class="m-btn cancel" onclick="hideMfModal()">Cancel 取消</button>
       <button class="m-btn ok" id="mf-confirm" onclick="submitMf()">Confirm 确认</button>
     </div>
+  </div>
+</div>
+
+<!-- ── QR Modal ──────────────────────────────────────── -->
+<div class="overlay" id="qr-modal" onclick="if(event.target===this)closeModal('qr-modal')">
+  <div class="modal" style="text-align:center">
+    <div class="m-handle"></div>
+    <div class="m-title">Scan to Join</div>
+    <div class="m-sub" style="margin-bottom:20px">n1-badminton.onrender.com</div>
+    <div id="qr-canvas" style="display:flex;justify-content:center;margin-bottom:20px"></div>
+    <button class="m-cancel-full" onclick="closeModal('qr-modal')">Close 关闭</button>
   </div>
 </div>
 
@@ -961,6 +976,21 @@ function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ── Utils ─────────────────────────────────────────────
+
+// ── QR Code ───────────────────────────────────────────
+
+let qrGenerated = false;
+function showQrModal() {
+  openModal('qr-modal');
+  if (!qrGenerated) {
+    new QRCode(document.getElementById('qr-canvas'), {
+      text: 'https://n1-badminton.onrender.com/',
+      width: 200, height: 200,
+      colorDark: '#14532d', colorLight: '#ffffff',
+    });
+    qrGenerated = true;
+  }
+}
 
 function esc(s)   { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escJs(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
