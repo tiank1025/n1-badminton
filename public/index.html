@@ -427,6 +427,26 @@
     }
     .mf-counter span { font-weight: 700; color: var(--g700); }
 
+    /* ── Partner picker ────────────────────────── */
+    .partner-list {
+      max-height: 160px; overflow-y: auto;
+      border: 2px solid var(--s200); border-radius: 12px;
+      background: var(--s50); margin-bottom: 16px;
+    }
+    .partner-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; cursor: pointer;
+      border-bottom: 1px solid var(--s100);
+      transition: background 0.12s;
+      user-select: none;
+    }
+    .partner-item:last-child { border-bottom: none; }
+    .partner-item:hover { background: var(--g50); }
+    .partner-item.sel { background: var(--g100); border-color: var(--g500); }
+    .partner-item-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--s700); }
+    .partner-item.sel .partner-item-name { color: var(--g700); }
+    .partner-none { color: var(--s400); font-size: 13px; }
+
     /* ── Pair badge ─────────────────────────────── */
     .pair-badge {
       font-size: 10px; font-weight: 700;
@@ -574,9 +594,7 @@
     <div class="lvl-section-label">Select your level</div>
     <div class="lvl-grid" id="lvl-picker"></div>
     <div class="lvl-section-label" style="margin-top:4px">Play with (optional)</div>
-    <input class="m-input" id="partner-input" type="text" placeholder="Partner's name"
-      maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false"
-      onkeydown="if(event.key==='Enter')submitJoin()" style="margin-bottom:16px">
+    <div class="partner-list" id="partner-list"></div>
     <div class="m-row">
       <button class="m-btn cancel" onclick="hideJoinModal()">Cancel</button>
       <button class="m-btn ok" onclick="submitJoin()">Join</button>
@@ -936,23 +954,50 @@ function selectLevel(l) {
 
 // ── Join ──────────────────────────────────────────────
 
+let myPartner = null;
+
+function renderPartnerList() {
+  const others = state.queue.filter(n => n !== document.getElementById('name-input').value.trim());
+  const el = document.getElementById('partner-list');
+  if (!others.length) {
+    el.innerHTML = `<div class="partner-item"><span class="partner-none">No one in queue yet</span></div>`;
+    myPartner = null;
+    return;
+  }
+  el.innerHTML = [
+    `<div class="partner-item${myPartner===null?' sel':''}" onclick="selectPartner(null)">
+      <span class="partner-item-name" style="color:var(--s400)">None</span>
+    </div>`,
+    ...others.map(n => `
+      <div class="partner-item${myPartner===n?' sel':''}" onclick="selectPartner('${escJs(n)}')">
+        <span class="partner-item-name">${esc(n)}</span>
+        ${lvlBadge(n)}
+      </div>`)
+  ].join('');
+}
+
+function selectPartner(name) {
+  myPartner = name;
+  renderPartnerList();
+}
+
 function showJoinModal() {
   const inp = document.getElementById('name-input');
   inp.value = myName || '';
-  document.getElementById('partner-input').value = '';
+  myPartner = null;
   renderLvlPicker();
+  renderPartnerList();
   openModal('join-modal');
   setTimeout(() => inp.focus(), 250);
 }
 function hideJoinModal() { closeModal('join-modal'); }
 function submitJoin() {
-  const inp     = document.getElementById('name-input');
-  const name    = inp.value.trim();
-  const partner = document.getElementById('partner-input').value.trim();
+  const inp  = document.getElementById('name-input');
+  const name = inp.value.trim();
   if (!name) { inp.focus(); return; }
   myName = name;
   localStorage.setItem('bmt_name', name);
-  socket.emit('join_queue', { name, level: myLevel, partner });
+  socket.emit('join_queue', { name, level: myLevel, partner: myPartner || '' });
   hideJoinModal();
 }
 
