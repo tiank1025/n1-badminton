@@ -42,6 +42,13 @@ function lvlIdx(name) {
   return i >= 0 ? i : 4;
 }
 
+function shiftNextSlots() {
+  const filled = COURT_IDS.map(id => state.next[id].players).filter(p => p.length > 0);
+  COURT_IDS.forEach((id, i) => {
+    state.next[id].players = filled[i] ? [...filled[i]] : [];
+  });
+}
+
 function smartFillInto(targetPlayers) {
   const needed = 4 - targetPlayers.length;
   if (needed <= 0 || state.queue.length === 0) return;
@@ -217,6 +224,7 @@ io.on('connection', (socket) => {
     if (court.players.length > 0 || court.playing) return;
     court.players = [...next.players];
     next.players  = [];
+    shiftNextSlots();
     broadcast();
   });
 
@@ -238,6 +246,7 @@ io.on('connection', (socket) => {
     if (next && next.players.length > 0) {
       court.players = [...next.players];
       next.players = [];
+      shiftNextSlots();
     }
     broadcast();
   });
