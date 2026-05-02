@@ -428,23 +428,34 @@
     .mf-counter span { font-weight: 700; color: var(--g700); }
 
     /* ── Partner picker ────────────────────────── */
+    .partner-selector {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px; border: 2px solid var(--s200); border-radius: 12px;
+      background: var(--s50); cursor: pointer; margin-bottom: 16px;
+      font-size: 14px; font-weight: 600; color: var(--s400);
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .partner-selector:hover { border-color: var(--s400); }
+    .partner-selector.chosen { border-color: var(--g500); background: var(--g50); color: var(--g700); }
+    .partner-selector.open { border-color: var(--g500); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .partner-chevron { font-size: 12px; color: var(--s400); transition: transform 0.15s; }
+    .partner-selector.open .partner-chevron { transform: rotate(180deg); }
     .partner-list {
       max-height: 160px; overflow-y: auto;
-      border: 2px solid var(--s200); border-radius: 12px;
-      background: var(--s50); margin-bottom: 16px;
+      border: 2px solid var(--g500); border-top: none;
+      border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+      background: white; margin-bottom: 16px;
     }
     .partner-item {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 14px; cursor: pointer;
       border-bottom: 1px solid var(--s100);
-      transition: background 0.12s;
-      user-select: none;
+      transition: background 0.12s; user-select: none;
     }
     .partner-item:last-child { border-bottom: none; }
     .partner-item:hover { background: var(--g50); }
-    .partner-item.sel { background: var(--g100); border-color: var(--g500); }
     .partner-item-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--s700); }
-    .partner-item.sel .partner-item-name { color: var(--g700); }
     .partner-none { color: var(--s400); font-size: 13px; }
 
     /* ── Pair badge ─────────────────────────────── */
@@ -594,7 +605,8 @@
     <div class="lvl-section-label">Select your level</div>
     <div class="lvl-grid" id="lvl-picker"></div>
     <div class="lvl-section-label" style="margin-top:4px">Play with (optional)</div>
-    <div class="partner-list" id="partner-list"></div>
+    <div class="partner-selector" id="partner-selector" onclick="togglePartnerDrop()"></div>
+    <div class="partner-list" id="partner-list" style="display:none;margin-top:6px"></div>
     <div class="m-row">
       <button class="m-btn cancel" onclick="hideJoinModal()">Cancel</button>
       <button class="m-btn ok" onclick="submitJoin()">Join</button>
@@ -955,38 +967,54 @@ function selectLevel(l) {
 // ── Join ──────────────────────────────────────────────
 
 let myPartner = null;
+let partnerDropOpen = false;
 
-function renderPartnerList() {
+function renderPartnerSelector() {
+  const sel = document.getElementById('partner-selector');
+  const list = document.getElementById('partner-list');
+
+  // update selector button
+  sel.className = 'partner-selector' +
+    (myPartner ? ' chosen' : '') +
+    (partnerDropOpen ? ' open' : '');
+  sel.innerHTML = myPartner
+    ? `<span>👥 ${esc(myPartner)}</span><span class="partner-chevron">▾</span>`
+    : `<span>Select a partner...</span><span class="partner-chevron">▾</span>`;
+
+  // show/hide dropdown
+  list.style.display = partnerDropOpen ? '' : 'none';
+  if (!partnerDropOpen) return;
+
   const others = state.queue.filter(n => n !== document.getElementById('name-input').value.trim());
-  const el = document.getElementById('partner-list');
   if (!others.length) {
-    el.innerHTML = `<div class="partner-item"><span class="partner-none">No one in queue yet</span></div>`;
-    myPartner = null;
+    list.innerHTML = `<div class="partner-item"><span class="partner-none">No one in queue yet</span></div>`;
     return;
   }
-  el.innerHTML = [
-    `<div class="partner-item${myPartner===null?' sel':''}" onclick="selectPartner(null)">
-      <span class="partner-item-name" style="color:var(--s400)">None</span>
-    </div>`,
-    ...others.map(n => `
-      <div class="partner-item${myPartner===n?' sel':''}" onclick="selectPartner('${escJs(n)}')">
-        <span class="partner-item-name">${esc(n)}</span>
-        ${lvlBadge(n)}
-      </div>`)
-  ].join('');
+  list.innerHTML = others.map(n => `
+    <div class="partner-item" onclick="selectPartner('${escJs(n)}')">
+      <span class="partner-item-name">${esc(n)}</span>
+      ${lvlBadge(n)}
+    </div>`).join('');
+}
+
+function togglePartnerDrop() {
+  partnerDropOpen = !partnerDropOpen;
+  renderPartnerSelector();
 }
 
 function selectPartner(name) {
   myPartner = name;
-  renderPartnerList();
+  partnerDropOpen = false;
+  renderPartnerSelector();
 }
 
 function showJoinModal() {
   const inp = document.getElementById('name-input');
   inp.value = myName || '';
   myPartner = null;
+  partnerDropOpen = false;
   renderLvlPicker();
-  renderPartnerList();
+  renderPartnerSelector();
   openModal('join-modal');
   setTimeout(() => inp.focus(), 250);
 }
