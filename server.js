@@ -10,7 +10,7 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 
 const COURT_IDS = [6, 7, 8, 9, 10];
-const LEVELS = ['A', 'B', 'C', 'D+', 'D', 'D-', 'E+', 'E', 'E-'];
+const LEVELS = ['advanced', 'intermediate', 'novice', 'beginner'];
 
 const state = {
   courts: Object.fromEntries(COURT_IDS.map(id => [id, { players: [], playing: false }])),
@@ -39,7 +39,7 @@ function isNameUsed(name) {
 
 function lvlIdx(name) {
   const i = LEVELS.indexOf(state.players[name]);
-  return i >= 0 ? i : 4;
+  return i >= 0 ? i : 2;
 }
 
 function shiftNextSlots() {
@@ -81,7 +81,7 @@ function smartFillInto(targetPlayers) {
       let foundIdx = -1;
       for (let i = 0; i < pool.length; i++) {
         const l = lvlIdx(pool[i]);
-        if (Math.max(maxL, l) - Math.min(minL, l) <= 3) { foundIdx = i; break; }
+        if (Math.max(maxL, l) - Math.min(minL, l) <= 1) { foundIdx = i; break; }
       }
       if (foundIdx === -1) foundIdx = 0;
       const next = pool.splice(foundIdx, 1)[0];

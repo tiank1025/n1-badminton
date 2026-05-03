@@ -672,18 +672,19 @@ const socket = io();
 const IDS = [6, 7, 8, 9, 10];
 const COLORS = { 6:'#16a34a', 7:'#0d9488', 8:'#0891b2', 9:'#7c3aed', 10:'#65a30d' };
 
-const LEVELS = ['A','B','C','D+','D','D-','E+','E','E-'];
+const LEVELS = ['advanced', 'intermediate', 'novice', 'beginner'];
 const LEVEL_COLORS = {
-  'A' :'#7c3aed', 'B' :'#2563eb', 'C' :'#0891b2',
-  'D+':'#0d9488', 'D' :'#16a34a', 'D-':'#65a30d',
-  'E+':'#ca8a04', 'E' :'#ea580c', 'E-':'#dc2626',
+  'advanced'    : '#7c3aed',
+  'intermediate': '#2563eb',
+  'novice'      : '#ea580c',
+  'beginner'    : '#dc2626',
 };
 
 const ADMIN_PIN = '1234'; // ← change this to your own PIN
 
 let state = { courts: {}, next: {}, queue: [], players: {} };
 let myName  = localStorage.getItem('bmt_name')  || '';
-let myLevel = localStorage.getItem('bmt_level') || 'D';
+let myLevel = localStorage.getItem('bmt_level') || 'novice';
 let isAdmin = localStorage.getItem('bmt_admin') === '1';
 let assigningPlayer = null;
 let howtoOn = !localStorage.getItem('bmt_howto_off');
