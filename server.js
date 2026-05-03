@@ -49,6 +49,14 @@ function shiftNextSlots() {
   });
 }
 
+function cleanupPair(name) {
+  const partner = state.pairs[name];
+  if (partner) {
+    delete state.pairs[name];
+    if (state.pairs[partner] === name) delete state.pairs[partner];
+  }
+}
+
 function smartFillInto(targetPlayers) {
   const needed = 4 - targetPlayers.length;
   if (needed <= 0 || state.queue.length === 0) return;
@@ -56,39 +64,44 @@ function smartFillInto(targetPlayers) {
   const pool = [...state.queue];
   const chosen = [];
 
-  function tryGrabPair(name) {
+  // Returns [name] or [name, partner] if partner is also still in pool
+  function getUnit(name) {
     const partner = state.pairs[name];
-    if (partner && chosen.length < needed) {
-      const pIdx = pool.indexOf(partner);
-      if (pIdx !== -1) {
-        pool.splice(pIdx, 1);
-        chosen.push(partner);
-      }
-    }
+    if (partner && pool.includes(partner)) return [name, partner];
+    return [name];
   }
 
-  for (let slot = 0; slot < needed && pool.length > 0; slot++) {
-    if (chosen.length === 0) {
-      const first = pool.shift();
-      chosen.push(first);
-      tryGrabPair(first);
-      if (chosen.length > 1) slot++;
-    } else {
-      const lvls = chosen.map(lvlIdx);
-      const minL = Math.min(...lvls);
-      const maxL = Math.max(...lvls);
+  function removeFromPool(...names) {
+    names.forEach(n => { const i = pool.indexOf(n); if (i !== -1) pool.splice(i, 1); });
+  }
 
-      let foundIdx = -1;
-      for (let i = 0; i < pool.length; i++) {
-        const l = lvlIdx(pool[i]);
-        if (Math.max(maxL, l) - Math.min(minL, l) <= 1) { foundIdx = i; break; }
-      }
-      if (foundIdx === -1) foundIdx = 0;
-      const next = pool.splice(foundIdx, 1)[0];
-      chosen.push(next);
-      tryGrabPair(next);
-      if (chosen.length > slot + 1) slot++;
+  while (chosen.length < needed && pool.length > 0) {
+    const lvls = chosen.map(lvlIdx);
+    const minL = chosen.length ? Math.min(...lvls) : null;
+    const maxL = chosen.length ? Math.max(...lvls) : null;
+
+    let foundUnit = null;
+
+    // Find first level-compatible unit that fits remaining slots
+    for (const name of pool) {
+      const unit = getUnit(name);
+      if (chosen.length + unit.length > needed) continue;
+      if (chosen.length === 0) { foundUnit = unit; break; }
+      const uLvls = unit.map(lvlIdx);
+      if (Math.max(maxL, ...uLvls) - Math.min(minL, ...uLvls) <= 1) { foundUnit = unit; break; }
     }
+
+    // Fallback: ignore level, take first unit that fits size
+    if (!foundUnit) {
+      for (const name of pool) {
+        const unit = getUnit(name);
+        if (chosen.length + unit.length <= needed) { foundUnit = unit; break; }
+      }
+    }
+
+    if (!foundUnit) break; // only oversized pairs remain, stop
+    removeFromPool(...foundUnit);
+    chosen.push(...foundUnit);
   }
 
   const chosenSet = new Set(chosen);
@@ -166,6 +179,7 @@ io.on('connection', (socket) => {
       .slice(0, spots);
     const added = new Set(toAdd);
     state.queue = state.queue.filter(n => !added.has(n));
+    toAdd.forEach(cleanupPair);
     court.players.push(...toAdd);
     broadcast();
   });
@@ -180,6 +194,7 @@ io.on('connection', (socket) => {
       .slice(0, spots);
     const added = new Set(toAdd);
     state.queue = state.queue.filter(n => !added.has(n));
+    toAdd.forEach(cleanupPair);
     next.players.push(...toAdd);
     broadcast();
   });
@@ -190,6 +205,7 @@ io.on('connection', (socket) => {
     const court = state.courts[courtId];
     if (!court || court.players.length >= 4 || court.players.includes(name)) return;
     state.queue = state.queue.filter(n => n !== name);
+    cleanupPair(name);
     court.players.push(name);
     broadcast();
   });
@@ -211,7 +227,10 @@ io.on('connection', (socket) => {
     if (!next) return;
     const wasIn = next.players.includes(name);
     next.players = next.players.filter(n => n !== name);
-    if (wasIn) state.queue.push(name);
+    if (wasIn) {
+      cleanupPair(name);
+      state.queue.push(name);
+    }
     broadcast();
   });
 
