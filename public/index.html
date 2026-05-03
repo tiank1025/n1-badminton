@@ -560,7 +560,6 @@
       <div class="howto-title" id="howto-title"></div>
       <div class="howto-steps" id="howto-steps"></div>
     </div>
-    <button class="howto-close" onclick="dismissHowto()">✕</button>
   </div>
   <button class="main-join-btn" onclick="showJoinModal()">+ Join Queue</button>
 
@@ -687,7 +686,6 @@ let myName  = localStorage.getItem('bmt_name')  || '';
 let myLevel = localStorage.getItem('bmt_level') || 'novice';
 let isAdmin = localStorage.getItem('bmt_admin') === '1';
 let assigningPlayer = null;
-let howtoOn = !localStorage.getItem('bmt_howto_off');
 
 socket.on('state_update', s => { state = s; render(); });
 socket.on('connected_count', n => { document.getElementById('online-count').textContent = n; });
@@ -716,7 +714,6 @@ function renderAdminBtn() {
 }
 
 function renderHowto() {
-  document.getElementById('howto').style.display = howtoOn ? '' : 'none';
   if (isAdmin) {
     document.getElementById('howto-title').textContent = 'Admin Flow';
     document.getElementById('howto-steps').innerHTML = `
@@ -737,11 +734,6 @@ function renderHowto() {
       <span class="howto-step">④ Re-join queue after game</span>
       <div style="margin-top:6px;font-size:11px;color:var(--g700);width:100%">💡 Tip: Scroll down to see the Waiting Queue</div>`;
   }
-}
-function dismissHowto() {
-  howtoOn = false;
-  localStorage.setItem('bmt_howto_off', '1');
-  renderHowto();
 }
 
 function renderSummary() {
