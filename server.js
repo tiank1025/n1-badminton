@@ -123,7 +123,8 @@ io.on('connection', (socket) => {
     name = sanitize(name);
     partner = sanitize(partner || '');
     if (!name || isNameUsed(name)) return;
-    if (LEVELS.includes(level)) state.players[name] = level;
+    if (!LEVELS.includes(level)) return;
+    state.players[name] = level;
     state.queue.push(name);
     if (partner && partner !== name) {
       state.pairs[name] = partner;

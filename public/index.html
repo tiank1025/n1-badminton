@@ -683,7 +683,7 @@ const ADMIN_PIN = '1234'; // ← change this to your own PIN
 
 let state = { courts: {}, next: {}, queue: [], players: {} };
 let myName  = localStorage.getItem('bmt_name')  || '';
-let myLevel = localStorage.getItem('bmt_level') || 'novice';
+let myLevel = localStorage.getItem('bmt_level') || '';
 let isAdmin = localStorage.getItem('bmt_admin') === '1';
 let assigningPlayer = null;
 
@@ -954,6 +954,10 @@ function renderLvlPicker() {
 function selectLevel(l) {
   myLevel = l;
   localStorage.setItem('bmt_level', l);
+  const lbl = document.querySelector('#join-modal .lvl-section-label');
+  if (lbl) lbl.style.color = '';
+  const picker = document.getElementById('lvl-picker');
+  if (picker) { picker.style.outline = ''; picker.style.borderRadius = ''; }
   renderLvlPicker();
 }
 
@@ -1016,6 +1020,13 @@ function submitJoin() {
   const inp  = document.getElementById('name-input');
   const name = inp.value.trim();
   if (!name) { inp.focus(); return; }
+  if (!myLevel) {
+    const lbl = document.querySelector('#join-modal .lvl-section-label');
+    lbl.style.color = '#ef4444';
+    document.getElementById('lvl-picker').style.outline = '2px solid #ef4444';
+    document.getElementById('lvl-picker').style.borderRadius = '6px';
+    return;
+  }
   myName = name;
   localStorage.setItem('bmt_name', name);
   socket.emit('join_queue', { name, level: myLevel, partner: myPartner || '' });
