@@ -387,10 +387,8 @@
     /* ── Level badges ───────────────────────────── */
     .lvl {
       display: inline-block;
-      font-size: 10px; font-weight: 800;
-      padding: 1px 5px; border-radius: 5px;
-      color: white; letter-spacing: 0.2px;
-      flex-shrink: 0; line-height: 1.5;
+      width: 10px; height: 10px; border-radius: 50%;
+      flex-shrink: 0;
     }
 
     /* ── Next (on-deck) court cards ────────────── */
@@ -938,7 +936,7 @@ function lvlBadge(name) {
   const lvl = state.players?.[name];
   if (!lvl) return '';
   const col = LEVEL_COLORS[lvl] || '#64748b';
-  return `<span class="lvl" style="background:${col}">${esc(lvl)}</span>`;
+  return `<span class="lvl" style="background:${col}"></span>`;
 }
 
 function renderLvlPicker() {
