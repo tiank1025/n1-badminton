@@ -243,7 +243,7 @@ io.on('connection', (socket) => {
     next.players = next.players.filter(n => n !== name);
     if (wasIn) {
       cleanupPair(name);
-      state.queue.push(name);
+      state.queue = [name, ...state.queue]; // return to front of queue
       // Individual removal invalidates the undo snapshot for this deck
       delete undoSnapshots[courtId];
     }
