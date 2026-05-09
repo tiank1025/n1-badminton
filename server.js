@@ -21,9 +21,12 @@ const state = {
 };
 
 let connectedCount = 0;
+// Per-deck undo: stores the players added in the last fill action for each court's on-deck slot
+const undoSnapshots = {}; // { [courtId]: string[] } — the players that were just added
 
 function broadcast() {
-  io.emit('state_update', state);
+  const canUndo = Object.fromEntries(COURT_IDS.map(id => [id, !!undoSnapshots[id]]));
+  io.emit('state_update', { ...state, canUndo });
 }
 
 function sanitize(name) {
@@ -47,6 +50,8 @@ function shiftNextSlots() {
   COURT_IDS.forEach((id, i) => {
     state.next[id].players = filled[i] ? [...filled[i]] : [];
   });
+  // Deck-to-courtId mapping changes after shift, so all undo snapshots are stale
+  COURT_IDS.forEach(id => { delete undoSnapshots[id]; });
 }
 
 function cleanupPair(name) {
@@ -167,7 +172,12 @@ io.on('connection', (socket) => {
   socket.on('fill_next', (courtId) => {
     courtId = Number(courtId);
     const next = state.next[courtId];
-    if (next) { smartFillInto(next.players); broadcast(); }
+    if (!next) return;
+    const before = new Set(next.players);
+    smartFillInto(next.players);
+    const added = next.players.filter(p => !before.has(p));
+    if (added.length > 0) undoSnapshots[courtId] = added;
+    broadcast();
   });
 
   socket.on('manual_assign', ({ courtId, names }) => {
@@ -178,6 +188,7 @@ io.on('connection', (socket) => {
     const toAdd = (names || []).map(n => sanitize(n))
       .filter(n => n && state.queue.includes(n) && !court.players.includes(n))
       .slice(0, spots);
+    if (toAdd.length === 0) return;
     const added = new Set(toAdd);
     state.queue = state.queue.filter(n => !added.has(n));
     toAdd.forEach(cleanupPair);
@@ -193,6 +204,8 @@ io.on('connection', (socket) => {
     const toAdd = (names || []).map(n => sanitize(n))
       .filter(n => n && state.queue.includes(n) && !next.players.includes(n))
       .slice(0, spots);
+    if (toAdd.length === 0) return;
+    undoSnapshots[courtId] = toAdd;
     const added = new Set(toAdd);
     state.queue = state.queue.filter(n => !added.has(n));
     toAdd.forEach(cleanupPair);
@@ -231,6 +244,8 @@ io.on('connection', (socket) => {
     if (wasIn) {
       cleanupPair(name);
       state.queue.push(name);
+      // Individual removal invalidates the undo snapshot for this deck
+      delete undoSnapshots[courtId];
     }
     broadcast();
   });
@@ -244,7 +259,19 @@ io.on('connection', (socket) => {
     if (court.players.length > 0 || court.playing) return;
     court.players = [...next.players];
     next.players  = [];
-    shiftNextSlots();
+    shiftNextSlots(); // also clears all undoSnapshots
+    broadcast();
+  });
+
+  socket.on('undo_deck', (courtId) => {
+    courtId = Number(courtId);
+    const added = undoSnapshots[courtId];
+    if (!added) return;
+    delete undoSnapshots[courtId];
+    const addedSet = new Set(added);
+    state.next[courtId].players = state.next[courtId].players.filter(p => !addedSet.has(p));
+    // Return players to front of queue in their original order
+    state.queue = [...added, ...state.queue];
     broadcast();
   });
 
@@ -266,7 +293,7 @@ io.on('connection', (socket) => {
     if (next && next.players.length > 0) {
       court.players = [...next.players];
       next.players = [];
-      shiftNextSlots();
+      shiftNextSlots(); // also clears all undoSnapshots
     }
     broadcast();
   });

@@ -477,6 +477,11 @@
     }
     .admin-btn:hover { background: rgba(255,255,255,0.22); }
     .admin-btn.unlocked { background: rgba(253,230,138,0.18); border-color: rgba(253,230,138,0.4); color: #fde68a; }
+    .c-btn.c-undo {
+      background: rgba(251,191,36,0.13); border: 1.5px solid rgba(251,191,36,0.45);
+      color: #92400e;
+    }
+    .c-btn.c-undo:hover { background: rgba(251,191,36,0.26); }
 
     /* ── Level picker (join modal) ──────────────── */
     .lvl-section-label {
@@ -782,14 +787,19 @@ function buildNextCourt(id, slot) {
     return `<div class="p-cell empty"><span class="p-empty-txt">Empty</span></div>`;
   }).join('');
 
+  const undoBtn = (isAdmin && state.canUndo?.[id])
+    ? `<button class="c-btn c-undo" onclick="undoDeck(${id})">↩ Undo</button>` : '';
+
   let actions = '';
   if (isAdmin) {
     if (count === 4) {
-      actions = `<button class="c-btn fill" style="background:${col}" onclick="showPromoteModal(${id})">→ Send to Court</button>`;
+      actions = `${undoBtn}<button class="c-btn fill" style="background:${col}" onclick="showPromoteModal(${id})">→ Send to Court</button>`;
     } else if (canFill) {
-      actions = `
+      actions = `${undoBtn}
         <button class="c-btn fill" style="background:${col};opacity:0.85" onclick="socket.emit('fill_next',${id})">Auto</button>
         <button class="c-btn eq" onclick="showMfModal(${id},'next')">Pick</button>`;
+    } else if (count > 0) {
+      actions = `${undoBtn}<button class="c-btn dim" disabled>Need more players</button>`;
     } else {
       actions = `<button class="c-btn dim" disabled>Waiting for players</button>`;
     }
@@ -916,6 +926,9 @@ function renderMyStatus() {
 
 // ── Actions ───────────────────────────────────────────
 
+function undoDeck(courtId) {
+  socket.emit('undo_deck', courtId);
+}
 function endGame(courtId, toQueue) {
   socket.emit('end_game', { courtId, toQueue });
 }
