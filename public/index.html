@@ -887,7 +887,7 @@ function buildCourt(id) {
     }
   }
 
-  const canRemove = isAdmin && !c.playing && count === 0 && !INITIAL_IDS.includes(id);
+  const canRemove = isAdmin && !c.playing && count === 0 && (state.next[id]?.players.length ?? 0) === 0;
   return `
     <div class="court-card${(c.playing||full)?' live':''}">
       <div class="court-head" style="background:${col}">
