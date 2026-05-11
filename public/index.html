@@ -689,6 +689,7 @@
 <script>
 const socket = io();
 let IDS = [6, 7, 8, 9, 10];
+const INITIAL_IDS = [6, 7, 8, 9, 10]; // fixed base courts — On Deck always uses these
 const COURT_PALETTE = ['#16a34a','#0d9488','#0891b2','#7c3aed','#65a30d','#dc2626','#ea580c','#db2777','#0369a1','#4f46e5'];
 function courtColor(id) { return COURT_PALETTE[IDS.indexOf(id) % COURT_PALETTE.length]; }
 
@@ -777,14 +778,14 @@ function renderCourts() {
 }
 
 function renderNext() {
-  const staged = IDS.filter(id => state.next[id]?.players.length > 0);
+  const staged = INITIAL_IDS.filter(id => state.next[id]?.players.length > 0);
   let chips = '';
   if (staged.length) chips = staged.map(id => {
     const slot = IDS.indexOf(id) + 1;
     return `<span class="sec-chip">⏳ #${slot}: ${state.next[id].players.length}/4</span>`;
   }).join('');
   document.getElementById('next-summary').innerHTML = chips;
-  document.getElementById('next-grid').innerHTML = IDS.map((id, i) => buildNextCourt(id, i + 1)).join('');
+  document.getElementById('next-grid').innerHTML = INITIAL_IDS.map((id, i) => buildNextCourt(id, i + 1)).join('');
 }
 
 function buildNextCourt(id, slot) {
@@ -881,7 +882,7 @@ function buildCourt(id) {
     }
   }
 
-  const canRemove = isAdmin && !c.playing && count === 0 && (state.next[id]?.players.length === 0) && IDS.length > 1;
+  const canRemove = isAdmin && !c.playing && count === 0 && !INITIAL_IDS.includes(id);
   return `
     <div class="court-card${(c.playing||full)?' live':''}">
       <div class="court-head" style="background:${col}">

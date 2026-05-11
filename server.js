@@ -25,7 +25,7 @@ let connectedCount = 0;
 const undoSnapshots = {};
 
 function broadcast() {
-  const canUndo = Object.fromEntries(state.courtIds.map(id => [id, !!undoSnapshots[id]]));
+  const canUndo = Object.fromEntries(INITIAL_COURT_IDS.map(id => [id, !!undoSnapshots[id]]));
   io.emit('state_update', { ...state, canUndo });
 }
 
@@ -36,7 +36,7 @@ function sanitize(name) {
 function isNameUsed(name) {
   if (state.queue.includes(name)) return true;
   if (state.courtIds.some(id => state.courts[id].players.includes(name))) return true;
-  if (state.courtIds.some(id => state.next[id].players.includes(name))) return true;
+  if (INITIAL_COURT_IDS.some(id => state.next[id].players.includes(name))) return true;
   return false;
 }
 
@@ -46,11 +46,11 @@ function lvlIdx(name) {
 }
 
 function shiftNextSlots() {
-  const filled = state.courtIds.map(id => state.next[id].players).filter(p => p.length > 0);
-  state.courtIds.forEach((id, i) => {
+  const filled = INITIAL_COURT_IDS.map(id => state.next[id].players).filter(p => p.length > 0);
+  INITIAL_COURT_IDS.forEach((id, i) => {
     state.next[id].players = filled[i] ? [...filled[i]] : [];
   });
-  state.courtIds.forEach(id => { delete undoSnapshots[id]; });
+  INITIAL_COURT_IDS.forEach(id => { delete undoSnapshots[id]; });
 }
 
 function cleanupPair(name) {
@@ -163,21 +163,19 @@ io.on('connection', (socket) => {
     const newId = Math.max(...state.courtIds) + 1;
     state.courtIds.push(newId);
     state.courts[newId] = { players: [], playing: false };
-    state.next[newId] = { players: [] };
+    // state.next is fixed to INITIAL_COURT_IDS — no on-deck slot for extra courts
     broadcast();
   });
 
   socket.on('remove_court', (courtId) => {
     courtId = Number(courtId);
     if (!state.courtIds.includes(courtId)) return;
-    if (state.courtIds.length <= 1) return;
+    if (INITIAL_COURT_IDS.includes(courtId)) return; // base courts are permanent
     const court = state.courts[courtId];
     const next = state.next[courtId];
     if (court.players.length > 0 || court.playing || next.players.length > 0) return;
     state.courtIds = state.courtIds.filter(id => id !== courtId);
     delete state.courts[courtId];
-    delete state.next[courtId];
-    delete undoSnapshots[courtId];
     broadcast();
   });
 
