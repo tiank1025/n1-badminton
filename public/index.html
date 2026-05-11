@@ -482,6 +482,22 @@
       color: #92400e;
     }
     .c-btn.c-undo:hover { background: rgba(251,191,36,0.26); }
+    .sec-add-btn {
+      margin-left: auto; flex-shrink: 0;
+      background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.3);
+      color: white; cursor: pointer; border-radius: 7px;
+      padding: 2px 9px; font-size: 11px; font-weight: 700;
+      font-family: inherit; transition: background 0.15s;
+    }
+    .sec-add-btn:hover { background: rgba(255,255,255,0.28); }
+    .court-rm-btn {
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.85); cursor: pointer; border-radius: 5px;
+      padding: 0px 6px; font-size: 15px; font-weight: 700; line-height: 1.4;
+      font-family: inherit; margin-left: auto;
+      transition: background 0.15s;
+    }
+    .court-rm-btn:hover { background: rgba(220,38,38,0.5); color: white; }
 
     /* ── Level picker (join modal) ──────────────── */
     .lvl-section-label {
@@ -570,6 +586,7 @@
   <div class="sec-label">
     Courts
     <div class="sec-chips" id="court-summary"></div>
+    <span id="add-court-wrap"></span>
   </div>
   <div class="courts-grid" id="courts-grid"></div>
 
@@ -671,8 +688,9 @@
 
 <script>
 const socket = io();
-const IDS = [6, 7, 8, 9, 10];
-const COLORS = { 6:'#16a34a', 7:'#0d9488', 8:'#0891b2', 9:'#7c3aed', 10:'#65a30d' };
+let IDS = [6, 7, 8, 9, 10];
+const COURT_PALETTE = ['#16a34a','#0d9488','#0891b2','#7c3aed','#65a30d','#dc2626','#ea580c','#db2777','#0369a1','#4f46e5'];
+function courtColor(id) { return COURT_PALETTE[IDS.indexOf(id) % COURT_PALETTE.length]; }
 
 const LEVELS = ['advanced', 'intermediate', 'novice', 'beginner'];
 const LEVEL_COLORS = {
@@ -690,7 +708,7 @@ let myLevel = localStorage.getItem('bmt_level') || '';
 let isAdmin = localStorage.getItem('bmt_admin') === '1';
 let assigningPlayer = null;
 
-socket.on('state_update', s => { state = s; render(); });
+socket.on('state_update', s => { state = s; if (s.courtIds) IDS = s.courtIds; render(); });
 socket.on('connected_count', n => { document.getElementById('online-count').textContent = n; });
 
 // ── Render ────────────────────────────────────────────
@@ -754,6 +772,8 @@ function renderSummary() {
 
 function renderCourts() {
   document.getElementById('courts-grid').innerHTML = IDS.map(buildCourt).join('');
+  document.getElementById('add-court-wrap').innerHTML = isAdmin
+    ? `<button class="sec-add-btn" onclick="addCourt()">＋ Court</button>` : '';
 }
 
 function renderNext() {
@@ -770,7 +790,7 @@ function renderNext() {
 function buildNextCourt(id, slot) {
   const c = state.next[id];
   if (!c) return '';
-  const col   = COLORS[id];
+  const col   = courtColor(id);
   const count = c.players.length;
   const canFill = count < 4 && state.queue.length > 0;
 
@@ -821,7 +841,7 @@ function buildNextCourt(id, slot) {
 function buildCourt(id) {
   const c = state.courts[id];
   if (!c) return '';
-  const col   = COLORS[id];
+  const col   = courtColor(id);
   const count = c.players.length;
   const full  = count === 4;
   const canFill = count < 4 && state.queue.length > 0;
@@ -861,11 +881,13 @@ function buildCourt(id) {
     }
   }
 
+  const canRemove = isAdmin && !c.playing && count === 0 && (state.next[id]?.players.length === 0) && IDS.length > 1;
   return `
     <div class="court-card${(c.playing||full)?' live':''}">
       <div class="court-head" style="background:${col}">
         <span class="court-name">Court ${id}</span>
         <span class="court-badge ${statusClass}">${statusLabel}</span>
+        ${canRemove ? `<button class="court-rm-btn" onclick="removeCourt(${id})" title="Remove court">−</button>` : ''}
       </div>
       <div class="p-grid">${cells}</div>
       <div class="c-actions">${actions}</div>
@@ -928,6 +950,12 @@ function renderMyStatus() {
 
 function undoDeck(courtId) {
   socket.emit('undo_deck', courtId);
+}
+function addCourt() {
+  socket.emit('add_court');
+}
+function removeCourt(courtId) {
+  socket.emit('remove_court', courtId);
 }
 function endGame(courtId, toQueue) {
   socket.emit('end_game', { courtId, toQueue });

@@ -9,23 +9,23 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-const COURT_IDS = [6, 7, 8, 9, 10];
+const INITIAL_COURT_IDS = [6, 7, 8, 9, 10];
 const LEVELS = ['advanced', 'intermediate', 'novice', 'beginner'];
 
 const state = {
-  courts: Object.fromEntries(COURT_IDS.map(id => [id, { players: [], playing: false }])),
-  next:   Object.fromEntries(COURT_IDS.map(id => [id, { players: [] }])),
+  courtIds: [...INITIAL_COURT_IDS],
+  courts: Object.fromEntries(INITIAL_COURT_IDS.map(id => [id, { players: [], playing: false }])),
+  next:    Object.fromEntries(INITIAL_COURT_IDS.map(id => [id, { players: [] }])),
   queue:   [],
   players: {},
-  pairs:   {}, // pairs[name] = partnerName (mutual)
+  pairs:   {},
 };
 
 let connectedCount = 0;
-// Per-deck undo: stores the players added in the last fill action for each court's on-deck slot
-const undoSnapshots = {}; // { [courtId]: string[] } — the players that were just added
+const undoSnapshots = {};
 
 function broadcast() {
-  const canUndo = Object.fromEntries(COURT_IDS.map(id => [id, !!undoSnapshots[id]]));
+  const canUndo = Object.fromEntries(state.courtIds.map(id => [id, !!undoSnapshots[id]]));
   io.emit('state_update', { ...state, canUndo });
 }
 
@@ -35,8 +35,8 @@ function sanitize(name) {
 
 function isNameUsed(name) {
   if (state.queue.includes(name)) return true;
-  if (COURT_IDS.some(id => state.courts[id].players.includes(name))) return true;
-  if (COURT_IDS.some(id => state.next[id].players.includes(name))) return true;
+  if (state.courtIds.some(id => state.courts[id].players.includes(name))) return true;
+  if (state.courtIds.some(id => state.next[id].players.includes(name))) return true;
   return false;
 }
 
@@ -46,12 +46,11 @@ function lvlIdx(name) {
 }
 
 function shiftNextSlots() {
-  const filled = COURT_IDS.map(id => state.next[id].players).filter(p => p.length > 0);
-  COURT_IDS.forEach((id, i) => {
+  const filled = state.courtIds.map(id => state.next[id].players).filter(p => p.length > 0);
+  state.courtIds.forEach((id, i) => {
     state.next[id].players = filled[i] ? [...filled[i]] : [];
   });
-  // Deck-to-courtId mapping changes after shift, so all undo snapshots are stale
-  COURT_IDS.forEach(id => { delete undoSnapshots[id]; });
+  state.courtIds.forEach(id => { delete undoSnapshots[id]; });
 }
 
 function cleanupPair(name) {
@@ -69,7 +68,6 @@ function smartFillInto(targetPlayers) {
   const pool = [...state.queue];
   const chosen = [];
 
-  // Returns [name] or [name, partner] if partner is also still in pool
   function getUnit(name) {
     const partner = state.pairs[name];
     if (partner && pool.includes(partner)) return [name, partner];
@@ -87,7 +85,6 @@ function smartFillInto(targetPlayers) {
 
     let foundUnit = null;
 
-    // Find first level-compatible unit that fits remaining slots
     for (const name of pool) {
       const unit = getUnit(name);
       if (chosen.length + unit.length > needed) continue;
@@ -96,7 +93,6 @@ function smartFillInto(targetPlayers) {
       if (Math.max(maxL, ...uLvls) - Math.min(minL, ...uLvls) <= 1) { foundUnit = unit; break; }
     }
 
-    // Fallback: ignore level, take first unit that fits size
     if (!foundUnit) {
       for (const name of pool) {
         const unit = getUnit(name);
@@ -104,7 +100,7 @@ function smartFillInto(targetPlayers) {
       }
     }
 
-    if (!foundUnit) break; // only oversized pairs remain, stop
+    if (!foundUnit) break;
     removeFromPool(...foundUnit);
     chosen.push(...foundUnit);
   }
@@ -160,6 +156,28 @@ io.on('connection', (socket) => {
       delete state.pairs[name];
       if (state.pairs[partner] === name) delete state.pairs[partner];
     }
+    broadcast();
+  });
+
+  socket.on('add_court', () => {
+    const newId = Math.max(...state.courtIds) + 1;
+    state.courtIds.push(newId);
+    state.courts[newId] = { players: [], playing: false };
+    state.next[newId] = { players: [] };
+    broadcast();
+  });
+
+  socket.on('remove_court', (courtId) => {
+    courtId = Number(courtId);
+    if (!state.courtIds.includes(courtId)) return;
+    if (state.courtIds.length <= 1) return;
+    const court = state.courts[courtId];
+    const next = state.next[courtId];
+    if (court.players.length > 0 || court.playing || next.players.length > 0) return;
+    state.courtIds = state.courtIds.filter(id => id !== courtId);
+    delete state.courts[courtId];
+    delete state.next[courtId];
+    delete undoSnapshots[courtId];
     broadcast();
   });
 
@@ -243,8 +261,7 @@ io.on('connection', (socket) => {
     next.players = next.players.filter(n => n !== name);
     if (wasIn) {
       cleanupPair(name);
-      state.queue = [name, ...state.queue]; // return to front of queue
-      // Individual removal invalidates the undo snapshot for this deck
+      state.queue = [name, ...state.queue];
       delete undoSnapshots[courtId];
     }
     broadcast();
@@ -259,7 +276,7 @@ io.on('connection', (socket) => {
     if (court.players.length > 0 || court.playing) return;
     court.players = [...next.players];
     next.players  = [];
-    shiftNextSlots(); // also clears all undoSnapshots
+    shiftNextSlots();
     broadcast();
   });
 
@@ -270,7 +287,6 @@ io.on('connection', (socket) => {
     delete undoSnapshots[courtId];
     const addedSet = new Set(added);
     state.next[courtId].players = state.next[courtId].players.filter(p => !addedSet.has(p));
-    // Return players to front of queue in their original order
     state.queue = [...added, ...state.queue];
     broadcast();
   });
@@ -288,12 +304,11 @@ io.on('connection', (socket) => {
     if (toQueue) state.queue.push(...court.players);
     court.players = [];
     court.playing = false;
-    // Auto-load staged players if any
     const next = state.next[courtId];
     if (next && next.players.length > 0) {
       court.players = [...next.players];
       next.players = [];
-      shiftNextSlots(); // also clears all undoSnapshots
+      shiftNextSlots();
     }
     broadcast();
   });
