@@ -161,8 +161,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('add_court', () => {
-    const nextId = EXTRA_COURT_IDS.find(id => !state.courtIds.includes(id));
-    if (nextId === undefined) return; // all extra courts already active
+    const allIds = [...EXTRA_COURT_IDS, ...INITIAL_COURT_IDS].sort((a, b) => a - b);
+    const nextId = allIds.find(id => !state.courtIds.includes(id));
+    if (nextId === undefined) return; // all courts already active
     state.courtIds.push(nextId);
     state.courtIds.sort((a, b) => a - b);
     state.courts[nextId] = { players: [], playing: false };
