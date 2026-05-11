@@ -690,8 +690,12 @@
 const socket = io();
 let IDS = [6, 7, 8, 9, 10];
 const INITIAL_IDS = [6, 7, 8, 9, 10]; // fixed base courts — On Deck always uses these
-const COURT_PALETTE = ['#16a34a','#0d9488','#0891b2','#7c3aed','#65a30d','#dc2626','#ea580c','#db2777','#0369a1','#4f46e5'];
-function courtColor(id) { return COURT_PALETTE[IDS.indexOf(id) % COURT_PALETTE.length]; }
+const COURT_COLORS = {
+  1:'#f59e0b', 2:'#f97316', 3:'#ec4899', 4:'#8b5cf6', 5:'#06b6d4',
+  6:'#16a34a', 7:'#0d9488', 8:'#0891b2', 9:'#7c3aed', 10:'#65a30d',
+};
+function courtColor(id) { return COURT_COLORS[id] || '#6b7280'; }
+const EXTRA_IDS = [1, 2, 3, 4, 5];
 
 const LEVELS = ['advanced', 'intermediate', 'novice', 'beginner'];
 const LEVEL_COLORS = {
@@ -773,7 +777,8 @@ function renderSummary() {
 
 function renderCourts() {
   document.getElementById('courts-grid').innerHTML = IDS.map(buildCourt).join('');
-  document.getElementById('add-court-wrap').innerHTML = isAdmin
+  const canAddMore = isAdmin && EXTRA_IDS.some(id => !IDS.includes(id));
+  document.getElementById('add-court-wrap').innerHTML = canAddMore
     ? `<button class="sec-add-btn" onclick="addCourt()">＋ Court</button>` : '';
 }
 

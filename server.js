@@ -10,6 +10,7 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 
 const INITIAL_COURT_IDS = [6, 7, 8, 9, 10];
+const EXTRA_COURT_IDS   = [1, 2, 3, 4, 5]; // venue courts available as extras
 const LEVELS = ['advanced', 'intermediate', 'novice', 'beginner'];
 
 const state = {
@@ -160,10 +161,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('add_court', () => {
-    const newId = Math.max(...state.courtIds) + 1;
-    state.courtIds.push(newId);
-    state.courts[newId] = { players: [], playing: false };
-    // state.next is fixed to INITIAL_COURT_IDS — no on-deck slot for extra courts
+    const nextId = EXTRA_COURT_IDS.find(id => !state.courtIds.includes(id));
+    if (nextId === undefined) return; // all extra courts already active
+    state.courtIds.push(nextId);
+    state.courtIds.sort((a, b) => a - b);
+    state.courts[nextId] = { players: [], playing: false };
     broadcast();
   });
 
