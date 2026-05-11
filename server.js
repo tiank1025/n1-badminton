@@ -174,8 +174,7 @@ io.on('connection', (socket) => {
     if (!state.courtIds.includes(courtId)) return;
     if (INITIAL_COURT_IDS.includes(courtId)) return; // base courts are permanent
     const court = state.courts[courtId];
-    const next = state.next[courtId];
-    if (court.players.length > 0 || court.playing || next.players.length > 0) return;
+    if (court.players.length > 0 || court.playing) return;
     state.courtIds = state.courtIds.filter(id => id !== courtId);
     delete state.courts[courtId];
     broadcast();
