@@ -777,7 +777,7 @@ function renderSummary() {
 
 function renderCourts() {
   document.getElementById('courts-grid').innerHTML = IDS.map(buildCourt).join('');
-  const canAddMore = isAdmin && EXTRA_IDS.some(id => !IDS.includes(id));
+  const canAddMore = isAdmin && IDS.length < EXTRA_IDS.length + INITIAL_IDS.length;
   document.getElementById('add-court-wrap').innerHTML = canAddMore
     ? `<button class="sec-add-btn" onclick="addCourt()">＋ Court</button>` : '';
 }
