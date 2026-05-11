@@ -1086,7 +1086,7 @@ function showAssignModal(name) {
   const avail = IDS.filter(id => state.courts[id]?.players.length < 4);
   document.getElementById('assign-courts').innerHTML = avail.map(id => {
     const spots = 4 - state.courts[id].players.length;
-    return `<button class="court-opt" style="background:${COLORS[id]}" onclick="doAssign(${id})">
+    return `<button class="court-opt" style="background:${courtColor(id)}" onclick="doAssign(${id})">
       <span>Court ${id}</span>
       <span class="court-opt-spots">${spots} spots left</span>
     </button>`;
@@ -1104,10 +1104,10 @@ function showPromoteModal(fromId) {
   assigningPlayer = null;
   const empty = IDS.filter(id => state.courts[id]?.players.length === 0 && !state.courts[id]?.playing);
   document.getElementById('assign-sub').textContent =
-    `Select empty court for On-Deck ${IDS.indexOf(fromId) + 1}`;
+    `Select empty court for On-Deck ${INITIAL_IDS.indexOf(fromId) + 1}`;
   document.getElementById('assign-courts').innerHTML = empty.length
     ? empty.map(id => `
-        <button class="court-opt" style="background:${COLORS[id]}" onclick="doPromote(${id})">
+        <button class="court-opt" style="background:${courtColor(id)}" onclick="doPromote(${id})">
           <span>Court ${id}</span>
           <span class="court-opt-spots">Empty</span>
         </button>`).join('')
