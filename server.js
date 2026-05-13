@@ -124,7 +124,8 @@ io.on('connection', (socket) => {
   socket.on('join_queue', ({ name, level, partner }) => {
     name = sanitize(name);
     partner = sanitize(partner || '');
-    if (!name || isNameUsed(name)) return;
+    if (!name) return;
+    if (isNameUsed(name)) { socket.emit('join_error', { reason: 'name_taken', name }); return; }
     if (!LEVELS.includes(level)) return;
     state.players[name] = level;
     state.queue.push(name);
@@ -305,12 +306,14 @@ io.on('connection', (socket) => {
     if (toQueue) state.queue.push(...court.players);
     court.players = [];
     court.playing = false;
-    const next = state.next[courtId];
-    if (next && next.players.length > 0) {
-      court.players = [...next.players];
-      next.players = [];
-      shiftNextSlots();
-    }
+    broadcast();
+  });
+
+  socket.on('set_player_level', ({ name, level }) => {
+    name = sanitize(name);
+    if (!name || !LEVELS.includes(level)) return;
+    if (state.players[name] === undefined) return;
+    state.players[name] = level;
     broadcast();
   });
 });

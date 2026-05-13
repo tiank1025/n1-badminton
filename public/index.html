@@ -521,6 +521,26 @@
       border-color: transparent !important;
       transform: scale(1.04);
     }
+
+    /* ── MF modal scrollable list ───────────────────── */
+    #mf-list {
+      max-height: 45vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ── Name error in join modal ───────────────────── */
+    .name-error {
+      color: #ef4444; font-size: 13px;
+      margin: -8px 0 10px; display: none;
+    }
+
+    /* ── Editable level dot ─────────────────────────── */
+    .lvl.editable {
+      cursor: pointer;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 0 0 3px rgba(0,0,0,0.15);
+    }
+    .lvl.editable:hover { opacity: 0.75; }
   </style>
 </head>
 <body>
@@ -620,7 +640,8 @@
     <div class="m-sub">Enter your name to join</div>
     <input class="m-input" id="name-input" type="text" placeholder="Your name"
       maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false"
-      onkeydown="if(event.key==='Enter')submitJoin()">
+      onkeydown="if(event.key==='Enter')submitJoin()" oninput="clearNameError()">
+    <div class="name-error" id="name-error"></div>
     <div class="lvl-section-label">Select your level</div>
     <div class="lvl-grid" id="lvl-picker"></div>
     <div class="lvl-section-label" style="margin-top:4px">Play with (optional)</div>
@@ -666,6 +687,17 @@
     <div class="m-sub" style="margin-bottom:20px">n1-badminton.onrender.com</div>
     <div id="qr-canvas" style="display:flex;justify-content:center;margin-bottom:20px"></div>
     <button class="m-cancel-full" onclick="closeModal('qr-modal')">Close</button>
+  </div>
+</div>
+
+<!-- ── Edit Level Modal ──────────────────────────────── -->
+<div class="overlay" id="lvl-modal" onclick="if(event.target===this)closeLvlModal()">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title">Change Level</div>
+    <div class="m-sub" id="lvl-modal-sub"></div>
+    <div class="lvl-grid" id="lvl-modal-picker"></div>
+    <button class="m-cancel-full" onclick="closeLvlModal()">Cancel</button>
   </div>
 </div>
 
@@ -872,10 +904,6 @@ function buildCourt(id) {
   if (isAdmin) {
     if (c.playing || full) {
       actions = `<button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue</button>`;
-    } else if (canFill) {
-      actions = `
-        <button class="c-btn fill" style="background:${col}" onclick="socket.emit('fill_court',${id})">Auto</button>
-        <button class="c-btn eq" onclick="showMfModal(${id})">Pick</button>`;
     } else {
       const msg = count === 0 ? 'Waiting for players' : `${count}/4 – need more`;
       actions = `<button class="c-btn dim" disabled>${msg}</button>`;
@@ -921,7 +949,7 @@ function renderQueue() {
     return `<div class="q-item${me?' me':''}">
       <span class="q-pos${i<4?' next':''}">${i+1}</span>
       <span class="q-name${me?' me':''}" title="${esc(name)}">${esc(name)}${me?' ★':''}</span>
-      ${lvlBadge(name)}
+      ${lvlBadge(name, true)}
       ${partner ? `<span class="pair-badge" title="Paired with ${esc(partner)}">🔗 ${esc(partner)}</span>` : ''}
       <div class="q-actions">
         ${isAdmin && partner ? `<button class="q-rm-btn" onclick="socket.emit('unlink_pair','${escJs(name)}')" title="Break pair" style="font-size:14px">✂️</button>` : ''}
@@ -979,11 +1007,14 @@ function removeFromNext(courtId, name) {
 
 // ── Level helpers ─────────────────────────────────────
 
-function lvlBadge(name) {
+function lvlBadge(name, editable = false) {
   const lvl = state.players?.[name];
   if (!lvl) return '';
   const col = LEVEL_COLORS[lvl] || '#64748b';
-  return `<span class="lvl" style="background:${col}"></span>`;
+  if (editable && isAdmin) {
+    return `<span class="lvl editable" style="background:${col}" title="Edit level: ${lvl}" onclick="showLvlModal('${escJs(name)}')"></span>`;
+  }
+  return `<span class="lvl" style="background:${col}" title="${lvl}"></span>`;
 }
 
 function renderLvlPicker() {
@@ -1235,6 +1266,58 @@ function showQrModal() {
 
 function esc(s)   { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escJs(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+// ── Name error helpers ────────────────────────────────
+
+function showNameError(msg) {
+  const el = document.getElementById('name-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+  const inp = document.getElementById('name-input');
+  inp.style.borderColor = '#ef4444';
+  inp.focus();
+}
+function clearNameError() {
+  const el = document.getElementById('name-error');
+  el.style.display = 'none';
+  document.getElementById('name-input').style.borderColor = '';
+}
+
+socket.on('join_error', ({ reason, name }) => {
+  if (reason === 'name_taken') {
+    openModal('join-modal');
+    showNameError(`"${name}" 已在队列或场地中，请换一个名字`);
+  }
+});
+
+// ── Admin: edit player level ──────────────────────────
+
+let editLvlName = null;
+
+function showLvlModal(name) {
+  editLvlName = name;
+  document.getElementById('lvl-modal-sub').textContent = `修改 ${name} 的等级`;
+  renderLvlModalPicker();
+  openModal('lvl-modal');
+}
+function closeLvlModal() { closeModal('lvl-modal'); editLvlName = null; }
+
+function renderLvlModalPicker() {
+  const current = state.players[editLvlName] || '';
+  document.getElementById('lvl-modal-picker').innerHTML = LEVELS.map(l => {
+    const col = LEVEL_COLORS[l];
+    const sel = l === current;
+    return `<button class="lvl-btn${sel?' sel':''}"
+      style="${sel?`background:${col};`:''}color:${sel?'white':col}"
+      onclick="setPlayerLevel('${l}')">${l}</button>`;
+  }).join('');
+}
+
+function setPlayerLevel(level) {
+  if (!editLvlName) return;
+  socket.emit('set_player_level', { name: editLvlName, level });
+  closeLvlModal();
+}
 </script>
 </body>
 </html>
