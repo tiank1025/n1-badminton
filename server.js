@@ -137,6 +137,7 @@ io.on('connection', (socket) => {
         state.pairs[partner] = name;
       }
     }
+    socket.emit('join_success');
     broadcast();
   });
 

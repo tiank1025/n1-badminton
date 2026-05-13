@@ -1106,7 +1106,6 @@ function submitJoin() {
   myName = name;
   localStorage.setItem('bmt_name', name);
   socket.emit('join_queue', { name, level: myLevel, partner: myPartner || '' });
-  hideJoinModal();
 }
 
 // ── Assign ────────────────────────────────────────────
@@ -1283,10 +1282,11 @@ function clearNameError() {
   document.getElementById('name-input').style.borderColor = '';
 }
 
+socket.on('join_success', () => { hideJoinModal(); });
+
 socket.on('join_error', ({ reason, name }) => {
   if (reason === 'name_taken') {
-    openModal('join-modal');
-    showNameError(`"${name}" 已在队列或场地中，请换一个名字`);
+    showNameError(`"${name}" is already in the queue or on a court. Please use a different name.`);
   }
 });
 
