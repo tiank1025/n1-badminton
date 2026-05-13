@@ -24,10 +24,12 @@ const state = {
 
 let connectedCount = 0;
 const undoSnapshots = {};
+const courtUndoSnapshots = {}; // courtId -> { type: 'end_game'|'promote', players, wasPlaying }
 
 function broadcast() {
   const canUndo = Object.fromEntries(INITIAL_COURT_IDS.map(id => [id, !!undoSnapshots[id]]));
-  io.emit('state_update', { ...state, canUndo });
+  const canUndoCourt = Object.fromEntries(state.courtIds.map(id => [id, !!courtUndoSnapshots[id]]));
+  io.emit('state_update', { ...state, canUndo, canUndoCourt });
 }
 
 function sanitize(name) {
@@ -187,7 +189,7 @@ io.on('connection', (socket) => {
   socket.on('fill_court', (courtId) => {
     courtId = Number(courtId);
     const court = state.courts[courtId];
-    if (court) { smartFillInto(court.players); broadcast(); }
+    if (court) { delete courtUndoSnapshots[courtId]; smartFillInto(court.players); broadcast(); }
   });
 
   socket.on('fill_next', (courtId) => {
@@ -205,6 +207,7 @@ io.on('connection', (socket) => {
     courtId = Number(courtId);
     const court = state.courts[courtId];
     if (!court) return;
+    delete courtUndoSnapshots[courtId];
     const spots = 4 - court.players.length;
     const toAdd = (names || []).map(n => sanitize(n))
       .filter(n => n && state.queue.includes(n) && !court.players.includes(n))
@@ -239,6 +242,7 @@ io.on('connection', (socket) => {
     name = sanitize(name);
     const court = state.courts[courtId];
     if (!court || court.players.length >= 4 || court.players.includes(name)) return;
+    delete courtUndoSnapshots[courtId];
     state.queue = state.queue.filter(n => n !== name);
     cleanupPair(name);
     court.players.push(name);
@@ -250,6 +254,7 @@ io.on('connection', (socket) => {
     name = sanitize(name);
     const court = state.courts[courtId];
     if (!court) return;
+    delete courtUndoSnapshots[courtId];
     court.players = court.players.filter(n => n !== name);
     if (court.players.length < 4) court.playing = false;
     broadcast();
@@ -277,6 +282,7 @@ io.on('connection', (socket) => {
     const court = state.courts[toCourtId];
     if (!next || !court || next.players.length === 0) return;
     if (court.players.length > 0 || court.playing) return;
+    courtUndoSnapshots[toCourtId] = { type: 'promote', players: [...next.players], wasPlaying: false };
     court.players = [...next.players];
     next.players  = [];
     shiftNextSlots();
@@ -297,16 +303,45 @@ io.on('connection', (socket) => {
   socket.on('start_game', (courtId) => {
     courtId = Number(courtId);
     const court = state.courts[courtId];
-    if (court && court.players.length === 4) { court.playing = true; broadcast(); }
+    if (court && court.players.length === 4) { delete courtUndoSnapshots[courtId]; court.playing = true; broadcast(); }
   });
 
   socket.on('end_game', ({ courtId, toQueue }) => {
     courtId = Number(courtId);
     const court = state.courts[courtId];
     if (!court) return;
+    if (court.players.length > 0) {
+      courtUndoSnapshots[courtId] = { type: 'end_game', players: [...court.players], wasPlaying: court.playing };
+    }
     if (toQueue) state.queue.push(...court.players);
     court.players = [];
     court.playing = false;
+    broadcast();
+  });
+
+  socket.on('undo_court_action', (courtId) => {
+    courtId = Number(courtId);
+    const snap = courtUndoSnapshots[courtId];
+    if (!snap) return;
+    const court = state.courts[courtId];
+    if (!court) return;
+
+    if (snap.type === 'end_game') {
+      if (court.players.length > 0 || court.playing) return;
+      const snapSet = new Set(snap.players);
+      state.queue = state.queue.filter(n => !snapSet.has(n));
+      court.players = [...snap.players];
+      court.playing = snap.wasPlaying;
+    } else if (snap.type === 'promote') {
+      if (court.playing) return;
+      const snapSet = new Set(snap.players);
+      const sameSet = court.players.length === snap.players.length && court.players.every(p => snapSet.has(p));
+      if (!sameSet) return;
+      court.players = [];
+      state.queue = [...snap.players, ...state.queue];
+    }
+
+    delete courtUndoSnapshots[courtId];
     broadcast();
   });
 

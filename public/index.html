@@ -900,10 +900,15 @@ function buildCourt(id) {
     return `<div class="p-cell empty"><span class="p-empty-txt">Empty</span></div>`;
   }).join('');
 
+  const hasCourtUndo = !!state.canUndoCourt?.[id];
   let actions = '';
   if (isAdmin) {
     if (c.playing || full) {
-      actions = `<button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue</button>`;
+      const undoBtn = (!c.playing && hasCourtUndo)
+        ? `<button class="c-btn c-undo" onclick="undoCourtAction(${id})" title="Undo send to court">↩ Undo Send</button>` : '';
+      actions = `${undoBtn}<button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue</button>`;
+    } else if (count === 0 && hasCourtUndo) {
+      actions = `<button class="c-btn c-undo" onclick="undoCourtAction(${id})" title="Restore players back to court">↩ Undo End</button>`;
     } else {
       const msg = count === 0 ? 'Waiting for players' : `${count}/4 – need more`;
       actions = `<button class="c-btn dim" disabled>${msg}</button>`;
@@ -984,6 +989,9 @@ function renderMyStatus() {
 
 function undoDeck(courtId) {
   socket.emit('undo_deck', courtId);
+}
+function undoCourtAction(courtId) {
+  socket.emit('undo_court_action', courtId);
 }
 function addCourt() {
   socket.emit('add_court');
