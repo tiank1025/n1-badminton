@@ -48,8 +48,10 @@
     #my-status { font-size:12px; font-weight:600; }
 
     /* ── Page layout with optional history sidebar ── */
-    .page-wrap { display:flex; align-items:flex-start; }
-    main { flex:1; min-width:0; max-width:1100px; padding:22px 18px 100px; }
+    .page-wrap { display:block; }
+    main { max-width:1100px; margin:0 auto; padding:22px 18px 100px; }
+    .page-wrap.admin-layout { display:flex; align-items:flex-start; }
+    .page-wrap.admin-layout main { flex:1; min-width:0; max-width:none; margin:0; }
     .history-sidebar {
       display:none;
       width:268px; flex-shrink:0;
@@ -147,6 +149,18 @@
     .c-btn.dim { background:var(--s100); color:var(--s400); cursor:default; font-weight:600; }
     .c-btn.c-undo { background:rgba(251,191,36,0.13); border:1.5px solid rgba(251,191,36,0.45); color:#92400e; }
     .c-btn.c-undo:hover { background:rgba(251,191,36,0.26); }
+
+    /* ── Compact admin mode for court/on-deck cards ── */
+    .admin-mode .courts-grid { gap:10px; margin-bottom:18px; }
+    .admin-mode .court-head { padding:9px 12px; }
+    .admin-mode .court-name { font-size:13px; }
+    .admin-mode .court-badge { font-size:9px; padding:2px 7px; }
+    .admin-mode .p-grid { gap:4px; padding:7px 9px; }
+    .admin-mode .p-cell { min-height:30px; padding:5px 7px; border-radius:9px; }
+    .admin-mode .p-name { font-size:11px; max-width:52px; }
+    .admin-mode .p-empty-txt { font-size:10px; }
+    .admin-mode .c-actions { padding:0 9px 9px; gap:5px; }
+    .admin-mode .c-btn { padding:7px 4px; font-size:10px; border-radius:9px; }
 
     .q-card { background:white; border-radius:20px; box-shadow:0 2px 10px rgba(0,0,0,0.07),0 0 0 1px rgba(0,0,0,0.04); overflow:hidden; }
     .q-head { padding:16px 18px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--s100); background:linear-gradient(to bottom,#fafffe,white); }
@@ -317,7 +331,7 @@
       <div class="howto-steps" id="howto-steps"></div>
     </div>
   </div>
-  <button class="main-join-btn" onclick="showJoinModal()">+ Join Queue</button>
+  <button class="main-join-btn" id="main-join-btn" onclick="showJoinModal()">+ Join Queue</button>
 
   <div class="sec-label">
     Courts
@@ -473,6 +487,9 @@ function renderAdminBtn() {
   if (isAdmin) { btn.textContent = '🔓 Admin'; btn.classList.add('unlocked'); }
   else         { btn.textContent = '🔒 Admin'; btn.classList.remove('unlocked'); }
   document.getElementById('history-sidebar').classList.toggle('visible', isAdmin);
+  document.getElementById('main-join-btn').style.display = isAdmin ? 'none' : '';
+  document.querySelector('main').classList.toggle('admin-mode', isAdmin);
+  document.querySelector('.page-wrap').classList.toggle('admin-layout', isAdmin);
 }
 
 function renderHowto() {
