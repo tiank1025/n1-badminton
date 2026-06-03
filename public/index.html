@@ -23,549 +23,251 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
       background-color: #f0fdf4;
-      background-image:
-        url('/bg-shuttle.svg'),
-        linear-gradient(160deg, #ecfdf5 0%, #f0fdf4 40%, #f8fafc 100%);
+      background-image: url('/bg-shuttle.svg'), linear-gradient(160deg, #ecfdf5 0%, #f0fdf4 40%, #f8fafc 100%);
       background-size: 80px 104px, cover;
       background-repeat: repeat, no-repeat;
       min-height: 100vh;
       color: var(--s800);
     }
 
-    /* ── Header ─────────────────────────────────── */
     header {
       background: linear-gradient(135deg, var(--g900) 0%, #166534 50%, var(--g700) 100%);
-      color: white;
-      padding: 14px 16px 12px;
+      color: white; padding: 14px 16px 12px;
       position: sticky; top: 0; z-index: 40;
       box-shadow: 0 4px 24px rgba(20,83,45,0.4), 0 1px 0 rgba(255,255,255,0.06) inset;
       overflow: hidden;
     }
-    .hd-deco {
-      position: absolute;
-      right: 180px; top: -28px;
-      width: 90px; height: 126px;
-      opacity: 0.1;
-      pointer-events: none;
-      transform: rotate(-12deg);
-    }
-    .hd-deco2 {
-      position: absolute;
-      left: 42%; top: -20px;
-      width: 60px; height: 84px;
-      opacity: 0.06;
-      pointer-events: none;
-      transform: rotate(8deg);
-    }
-    .hd { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
-    .hd-title { font-size: 20px; font-weight: 900; letter-spacing: 0.2px; font-family: 'Fredoka One', cursive; }
-    .hd-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
-    .hd-right { text-align: right; }
+    .hd-deco { position:absolute; right:180px; top:-28px; width:90px; height:126px; opacity:0.1; pointer-events:none; transform:rotate(-12deg); }
+    .hd-deco2 { position:absolute; left:42%; top:-20px; width:60px; height:84px; opacity:0.06; pointer-events:none; transform:rotate(8deg); }
+    .hd { max-width:1100px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; }
+    .hd-title { font-size:20px; font-weight:900; letter-spacing:0.2px; font-family:'Fredoka One',cursive; }
+    .hd-sub { font-size:11px; color:rgba(255,255,255,0.5); margin-top:2px; }
+    .hd-right { text-align:right; }
+    .hd-btn-row { display:flex; gap:6px; margin-top:5px; flex-wrap:wrap; justify-content:flex-end; }
+    .hd-online { font-size:11px; color:rgba(255,255,255,0.6); margin-bottom:3px; }
+    #my-status { font-size:12px; font-weight:600; }
+
+    main { max-width:1100px; margin:0 auto; padding:16px 12px 80px; }
+
     .main-join-btn {
-      display: block; width: 100%;
-      background: linear-gradient(135deg, var(--g500) 0%, var(--g600) 100%);
-      color: white;
-      border: none; cursor: pointer;
-      padding: 15px; border-radius: 14px;
-      font-size: 16px; font-weight: 800; font-family: inherit;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 14px rgba(22,163,74,0.35);
-      transition: box-shadow 0.15s, transform 0.1s;
+      display:block; width:100%;
+      background:linear-gradient(135deg,var(--g500) 0%,var(--g600) 100%);
+      color:white; border:none; cursor:pointer;
+      padding:15px; border-radius:14px;
+      font-size:16px; font-weight:800; font-family:inherit;
+      margin-bottom:16px;
+      box-shadow:0 4px 14px rgba(22,163,74,0.35);
+      transition:box-shadow 0.15s, transform 0.1s;
     }
-    .main-join-btn:hover { box-shadow: 0 6px 18px rgba(22,163,74,0.45); }
-    .main-join-btn:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(22,163,74,0.3); }
-    .hd-online { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 3px; }
-    #my-status { font-size: 12px; font-weight: 600; }
+    .main-join-btn:hover { box-shadow:0 6px 18px rgba(22,163,74,0.45); }
+    .main-join-btn:active { transform:scale(0.98); }
 
-    /* ── Main ───────────────────────────────────── */
-    main { max-width: 1100px; margin: 0 auto; padding: 16px 12px 80px; }
-
-    /* ── How-to banner ──────────────────────────── */
     .howto {
-      background: white;
-      border: 1.5px solid var(--g200);
-      border-left: 4px solid var(--g500);
-      border-radius: 14px;
-      padding: 13px 14px 13px 14px;
-      margin-bottom: 16px;
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      box-shadow: 0 2px 10px rgba(22,163,74,0.08);
+      background:white; border:1.5px solid var(--g200); border-left:4px solid var(--g500);
+      border-radius:14px; padding:13px 14px; margin-bottom:16px;
+      display:flex; gap:10px; align-items:flex-start;
+      box-shadow:0 2px 10px rgba(22,163,74,0.08);
     }
-    .howto-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
-    .howto-body { flex: 1; }
-    .howto-title { font-size: 13px; font-weight: 800; color: var(--g800); margin-bottom: 5px; }
-    .howto-steps { display: flex; gap: 0; align-items: center; flex-wrap: wrap; gap: 4px; }
-    .howto-step {
-      background: var(--g100); color: var(--g800);
-      font-size: 11px; font-weight: 700;
-      padding: 3px 9px; border-radius: 20px;
-    }
-    .howto-arrow { color: var(--s400); font-size: 12px; }
-    .howto-close {
-      background: none; border: none; cursor: pointer;
-      color: var(--s400); font-size: 18px; line-height: 1;
-      padding: 2px; flex-shrink: 0;
-      border-radius: 6px; transition: color 0.15s;
-    }
-    .howto-close:hover { color: var(--s600); }
+    .howto-icon { font-size:22px; flex-shrink:0; margin-top:1px; }
+    .howto-body { flex:1; }
+    .howto-title { font-size:13px; font-weight:800; color:var(--g800); margin-bottom:5px; }
+    .howto-steps { display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
+    .howto-step { background:var(--g100); color:var(--g800); font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; }
+    .howto-arrow { color:var(--s400); font-size:12px; }
 
-    /* ── Section label ──────────────────────────── */
     .sec-label {
-      font-size: 11px; font-weight: 800; letter-spacing: 1px;
-      text-transform: uppercase; color: var(--g700);
-      margin-bottom: 10px;
-      display: flex; align-items: center; gap: 8px;
+      font-size:11px; font-weight:800; letter-spacing:1px;
+      text-transform:uppercase; color:var(--g700);
+      margin-bottom:10px; display:flex; align-items:center; gap:8px;
     }
-    .sec-chips { display: flex; gap: 5px; flex-wrap: wrap; }
-    .sec-chip {
-      font-size: 11px; font-weight: 600;
-      padding: 3px 9px; border-radius: 20px;
-      background: white; border: 1.5px solid var(--g200); color: var(--g700);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    }
-    .sec-chip.on { background: var(--g100); color: var(--g800); border-color: var(--g500); }
+    .sec-chips { display:flex; gap:5px; flex-wrap:wrap; }
+    .sec-chip { font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; background:white; border:1.5px solid var(--g200); color:var(--g700); box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+    .sec-chip.on { background:var(--g100); color:var(--g800); border-color:var(--g500); }
+    .sec-add-btn { margin-left:auto; flex-shrink:0; background:white; border:1.5px solid var(--g500); color:var(--g700); cursor:pointer; border-radius:7px; padding:2px 9px; font-size:11px; font-weight:700; font-family:inherit; transition:background 0.15s,color 0.15s; }
+    .sec-add-btn:hover { background:var(--g500); color:white; }
 
-    /* ── Courts grid ────────────────────────────── */
-    .courts-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    @media (min-width: 560px)  { .courts-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (min-width: 900px)  { .courts-grid { grid-template-columns: repeat(5, 1fr); } }
+    .courts-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:20px; }
+    @media(min-width:560px) { .courts-grid { grid-template-columns:repeat(3,1fr); } }
+    @media(min-width:900px) { .courts-grid { grid-template-columns:repeat(5,1fr); } }
 
-    /* ── Court card ─────────────────────────────── */
     .court-card {
-      background: white;
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
-      display: flex; flex-direction: column;
-      transition: box-shadow 0.2s, transform 0.2s;
+      background:white; border-radius:18px; overflow:hidden;
+      box-shadow:0 2px 8px rgba(0,0,0,0.07),0 0 0 1px rgba(0,0,0,0.04);
+      display:flex; flex-direction:column;
+      transition:box-shadow 0.2s,transform 0.2s;
     }
-    .court-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.11), 0 0 0 1px rgba(0,0,0,0.04);
-    }
-    .court-card.live {
-      box-shadow: 0 4px 20px rgba(22,163,74,0.28), 0 0 0 2px var(--g500);
-    }
-    .court-card.live:hover {
-      box-shadow: 0 8px 28px rgba(22,163,74,0.35), 0 0 0 2px var(--g500);
-    }
+    .court-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.11),0 0 0 1px rgba(0,0,0,0.04); }
+    .court-card.live { box-shadow:0 4px 20px rgba(22,163,74,0.28),0 0 0 2px var(--g500); }
+    .court-card.live:hover { box-shadow:0 8px 28px rgba(22,163,74,0.35),0 0 0 2px var(--g500); }
+    .next-card { border:2px dashed var(--s300,#cbd5e1); box-shadow:none; opacity:0.92; }
+    .next-card .court-head { opacity:0.78; }
 
-    .court-head {
-      padding: 11px 13px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: relative; overflow: hidden;
-    }
-    .court-head::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
-      pointer-events: none;
-    }
-    .court-name { font-size: 14px; font-weight: 900; color: white; letter-spacing: -0.2px; }
-    .court-badge {
-      font-size: 10px; font-weight: 700;
-      padding: 2px 8px; border-radius: 20px;
-      background: rgba(255,255,255,0.22); color: white;
-      backdrop-filter: blur(4px);
-    }
-    .court-badge.live {
-      background: white;
-      animation: blink 2s ease-in-out infinite;
-    }
+    .court-head { padding:11px 13px; display:flex; align-items:center; justify-content:space-between; position:relative; overflow:hidden; }
+    .court-head::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,0.12) 0%,transparent 60%); pointer-events:none; }
+    .court-name { font-size:14px; font-weight:900; color:white; letter-spacing:-0.2px; }
+    .court-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,0.22); color:white; backdrop-filter:blur(4px); }
+    .court-badge.live { background:white; animation:blink 2s ease-in-out infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.55} }
+    .court-rm-btn { background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); color:rgba(255,255,255,0.85); cursor:pointer; border-radius:5px; padding:0px 6px; font-size:15px; font-weight:700; line-height:1.4; font-family:inherit; margin-left:auto; transition:background 0.15s; }
+    .court-rm-btn:hover { background:rgba(220,38,38,0.5); color:white; }
 
-    /* 2×2 player grid */
-    .p-grid {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 5px; padding: 8px 10px; flex: 1;
-    }
-    .p-cell {
-      border-radius: 10px; padding: 6px 8px;
-      display: flex; align-items: center; justify-content: space-between;
-      min-height: 34px;
-    }
-    .p-cell.filled { background: var(--g50); border: 1.5px solid var(--g200); }
-    .p-cell.filled.me { background: var(--g100); border-color: var(--g500); }
-    .p-cell.empty {
-      background: var(--s50); border: 1.5px dashed var(--s200);
-      justify-content: center;
-    }
-    .p-name {
-      font-size: 12px; font-weight: 700; color: var(--s700);
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      max-width: 65px;
-    }
-    .p-name.me { color: var(--g700); }
-    .p-empty-txt { font-size: 11px; color: var(--s300, #cbd5e1); }
-    .p-rm {
-      border: none; background: none; cursor: pointer;
-      color: var(--s300, #cbd5e1); font-size: 16px; line-height: 1;
-      padding: 0 0 0 4px; border-radius: 4px;
-      transition: color 0.15s; flex-shrink: 0;
-    }
-    .p-rm:hover { color: #ef4444; }
+    .p-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:8px 10px; flex:1; }
+    .p-cell { border-radius:10px; padding:6px 8px; display:flex; align-items:center; justify-content:space-between; min-height:34px; }
+    .p-cell.filled { background:var(--g50); border:1.5px solid var(--g200); }
+    .p-cell.filled.me { background:var(--g100); border-color:var(--g500); }
+    .p-cell.empty { background:var(--s50); border:1.5px dashed var(--s200); justify-content:center; }
+    .p-name { font-size:12px; font-weight:700; color:var(--s700); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65px; }
+    .p-name.me { color:var(--g700); }
+    .p-empty-txt { font-size:11px; color:var(--s300,#cbd5e1); }
+    .p-rm { border:none; background:none; cursor:pointer; color:var(--s300,#cbd5e1); font-size:16px; line-height:1; padding:0 0 0 4px; border-radius:4px; transition:color 0.15s; flex-shrink:0; }
+    .p-rm:hover { color:#ef4444; }
 
-    /* Court action row */
-    .c-actions { padding: 0 10px 10px; display: flex; gap: 6px; }
-    .c-btn {
-      flex: 1; border: none; cursor: pointer;
-      border-radius: 10px; padding: 9px 5px;
-      font-size: 11px; font-weight: 700;
-      font-family: inherit; white-space: nowrap;
-      transition: opacity 0.15s, transform 0.1s;
-      line-height: 1.3;
-    }
-    .c-btn:active { transform: scale(0.96); }
-    .c-btn:hover { opacity: 0.82; }
-    .c-btn.fill  { color: white; }
-    .c-btn.eq    { background: var(--g100); color: var(--g800); }
-    .c-btn.el    { background: #fee2e2; color: #b91c1c; }
-    .c-btn.dim   { background: var(--s100); color: var(--s400); cursor: default; font-weight: 600; }
+    .c-actions { padding:0 10px 10px; display:flex; gap:6px; }
+    .c-btn { flex:1; border:none; cursor:pointer; border-radius:10px; padding:9px 5px; font-size:11px; font-weight:700; font-family:inherit; white-space:nowrap; transition:opacity 0.15s,transform 0.1s; line-height:1.3; }
+    .c-btn:active { transform:scale(0.96); }
+    .c-btn:hover { opacity:0.82; }
+    .c-btn.fill { color:white; }
+    .c-btn.eq { background:var(--g100); color:var(--g800); }
+    .c-btn.dim { background:var(--s100); color:var(--s400); cursor:default; font-weight:600; }
+    .c-btn.c-undo { background:rgba(251,191,36,0.13); border:1.5px solid rgba(251,191,36,0.45); color:#92400e; }
+    .c-btn.c-undo:hover { background:rgba(251,191,36,0.26); }
 
-    /* ── Queue card ─────────────────────────────── */
-    .q-card {
-      background: white;
-      border-radius: 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
-      overflow: hidden;
-    }
-    .q-head {
-      padding: 14px 16px 13px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--s100);
-      background: linear-gradient(to bottom, #fafffe, white);
-    }
-    .q-title-row { display: flex; align-items: center; gap: 8px; }
-    .q-title { font-size: 16px; font-weight: 900; }
-    .q-badge {
-      background: var(--g100); color: var(--g800);
-      font-size: 12px; font-weight: 700;
-      padding: 3px 10px; border-radius: 20px;
-      border: 1px solid var(--g200);
-    }
-    .join-btn {
-      background: linear-gradient(135deg, var(--g500), var(--g600));
-      color: white;
-      border: none; cursor: pointer;
-      padding: 9px 18px; border-radius: 10px;
-      font-size: 13px; font-weight: 700; font-family: inherit;
-      box-shadow: 0 2px 8px rgba(22,163,74,0.3);
-      transition: box-shadow 0.15s, transform 0.1s;
-    }
-    .join-btn:hover { box-shadow: 0 4px 12px rgba(22,163,74,0.4); }
-    .join-btn:active { transform: scale(0.97); }
+    .q-card { background:white; border-radius:18px; box-shadow:0 2px 8px rgba(0,0,0,0.07),0 0 0 1px rgba(0,0,0,0.04); overflow:hidden; }
+    .q-head { padding:14px 16px 13px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--s100); background:linear-gradient(to bottom,#fafffe,white); }
+    .q-title-row { display:flex; align-items:center; gap:8px; }
+    .q-title { font-size:16px; font-weight:900; }
+    .q-badge { background:var(--g100); color:var(--g800); font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px; border:1px solid var(--g200); }
+    .join-btn { background:linear-gradient(135deg,var(--g500),var(--g600)); color:white; border:none; cursor:pointer; padding:9px 18px; border-radius:10px; font-size:13px; font-weight:700; font-family:inherit; box-shadow:0 2px 8px rgba(22,163,74,0.3); transition:box-shadow 0.15s,transform 0.1s; }
+    .join-btn:hover { box-shadow:0 4px 12px rgba(22,163,74,0.4); }
+    .join-btn:active { transform:scale(0.97); }
+    .q-empty { text-align:center; color:var(--s400); font-size:14px; padding:36px 16px; }
+    .q-empty-icon { font-size:40px; margin-bottom:10px; }
+    .q-empty-hint { font-size:12px; color:var(--s400); margin-top:6px; }
+    .q-list { padding:8px 12px 12px; display:flex; flex-direction:column; gap:5px; }
+    .q-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:var(--s50); border:1.5px solid transparent; transition:background 0.15s,border-color 0.15s; }
+    .q-item:hover { background:#f8fffe; border-color:var(--g200); }
+    .q-item.me { background:var(--g50); border-color:var(--g200); }
+    .q-item.me:hover { background:#dcfce7; }
+    .q-pos { width:22px; text-align:center; font-size:12px; font-weight:800; color:var(--s300,#cbd5e1); font-variant-numeric:tabular-nums; flex-shrink:0; }
+    .q-pos.next { color:var(--g500); }
+    .q-name { flex:1; font-size:14px; font-weight:600; color:var(--s700); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .q-name.me { color:var(--g700); font-weight:700; }
+    .q-actions { display:flex; gap:5px; flex-shrink:0; }
+    .q-assign-btn { background:white; border:1.5px solid var(--s200); color:var(--s500); cursor:pointer; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; transition:all 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+    .q-assign-btn:hover { background:var(--g50); border-color:var(--g500); color:var(--g700); }
+    .q-rm-btn { background:none; border:none; cursor:pointer; color:var(--s300,#cbd5e1); width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; transition:color 0.15s; }
+    .q-rm-btn:hover { color:#ef4444; }
 
-    .q-empty {
-      text-align: center; color: var(--s400);
-      font-size: 14px; padding: 36px 16px;
-    }
-    .q-empty-icon { font-size: 40px; margin-bottom: 10px; }
-    .q-empty-hint { font-size: 12px; color: var(--s400); margin-top: 6px; }
+    /* ── Level badges ── */
+    .lvl { display:inline-block; width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .lvl.editable { cursor:pointer; box-shadow:0 0 0 2px rgba(255,255,255,0.6),0 0 0 3px rgba(0,0,0,0.15); width:12px; height:12px; }
+    .lvl.editable:hover { opacity:0.75; }
 
-    .q-list { padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 5px; }
-    .q-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 12px;
-      background: var(--s50); border: 1.5px solid transparent;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .q-item:hover { background: #f8fffe; border-color: var(--g200); }
-    .q-item.me { background: var(--g50); border-color: var(--g200); }
-    .q-item.me:hover { background: #dcfce7; }
-    .q-pos {
-      width: 22px; text-align: center;
-      font-size: 12px; font-weight: 800; color: var(--s300, #cbd5e1);
-      font-variant-numeric: tabular-nums; flex-shrink: 0;
-    }
-    .q-pos.next { color: var(--g500); }
-    .q-name {
-      flex: 1; font-size: 14px; font-weight: 600; color: var(--s700);
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .q-name.me { color: var(--g700); font-weight: 700; }
-    .q-actions { display: flex; gap: 5px; flex-shrink: 0; }
-    .q-assign-btn {
-      background: white; border: 1.5px solid var(--s200);
-      color: var(--s500); cursor: pointer;
-      width: 30px; height: 30px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; transition: all 0.15s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    }
-    .q-assign-btn:hover { background: var(--g50); border-color: var(--g500); color: var(--g700); }
-    .q-rm-btn {
-      background: none; border: none; cursor: pointer;
-      color: var(--s300,#cbd5e1); width: 30px; height: 30px;
-      border-radius: 8px; display: flex; align-items: center;
-      justify-content: center; font-size: 18px; transition: color 0.15s;
-    }
-    .q-rm-btn:hover { color: #ef4444; }
+    /* ── Pair badge ── */
+    .pair-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; background:#fef9c3; color:#854d0e; border:1px solid #fde047; white-space:nowrap; flex-shrink:0; }
 
-    /* ── Modals ──────────────────────────────────── */
-    .overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(2px);
-      display: flex; align-items: flex-end; justify-content: center;
-      z-index: 50; opacity: 0; pointer-events: none;
-      transition: opacity 0.2s;
-    }
-    .overlay.open { opacity: 1; pointer-events: all; }
-    @media (min-width: 480px) { .overlay { align-items: center; } }
+    /* ── Modals ── */
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(2px); display:flex; align-items:flex-end; justify-content:center; z-index:50; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+    .overlay.open { opacity:1; pointer-events:all; }
+    @media(min-width:480px) { .overlay { align-items:center; } }
+    .modal { background:white; border-radius:24px 24px 0 0; padding:18px 18px 36px; width:100%; max-width:420px; transform:translateY(16px); transition:transform 0.25s cubic-bezier(.34,1.56,.64,1); box-shadow:0 -4px 40px rgba(0,0,0,0.15); }
+    @media(min-width:480px) { .modal { border-radius:24px; padding:28px 24px; transform:scale(0.95); box-shadow:0 20px 60px rgba(0,0,0,0.2); } .overlay.open .modal { transform:scale(1); } }
+    .overlay.open .modal { transform:translateY(0); }
+    .m-handle { width:40px; height:4px; background:var(--s200); border-radius:4px; margin:0 auto 20px; }
+    @media(min-width:480px) { .m-handle { display:none; } }
+    .m-title { font-size:19px; font-weight:900; color:var(--s900); margin-bottom:4px; }
+    .m-sub { font-size:13px; color:var(--s500); margin-bottom:18px; }
+    .m-input { width:100%; border:2px solid var(--s200); border-radius:12px; padding:13px 16px; font-size:16px; outline:none; font-family:inherit; color:var(--s800); margin-bottom:14px; transition:border-color 0.15s,box-shadow 0.15s; background:var(--s50); }
+    .m-input:focus { border-color:var(--g500); box-shadow:0 0 0 3px rgba(34,197,94,0.12); background:white; }
+    .m-row { display:flex; gap:10px; }
+    .m-btn { flex:1; border:none; cursor:pointer; border-radius:12px; padding:14px; font-size:15px; font-weight:700; font-family:inherit; transition:opacity 0.15s,transform 0.1s; }
+    .m-btn:hover { opacity:0.88; }
+    .m-btn:active { transform:scale(0.97); }
+    .m-btn.cancel { background:var(--s100); color:var(--s600); }
+    .m-btn.ok { background:linear-gradient(135deg,var(--g500),var(--g600)); color:white; box-shadow:0 3px 10px rgba(22,163,74,0.3); }
+    .court-opt { width:100%; border:none; cursor:pointer; border-radius:12px; padding:13px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-family:inherit; font-size:14px; font-weight:700; color:white; transition:opacity 0.15s,transform 0.1s; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+    .court-opt:hover { opacity:0.9; transform:translateY(-1px); }
+    .court-opt:active { transform:scale(0.98); }
+    .court-opt-spots { font-size:12px; font-weight:500; opacity:0.85; }
+    .m-cancel-full { width:100%; margin-top:4px; border:none; cursor:pointer; border-radius:12px; padding:13px; background:var(--s100); color:var(--s600); font-size:14px; font-weight:700; font-family:inherit; transition:background 0.15s; }
+    .m-cancel-full:hover { background:var(--s200); }
 
-    .modal {
-      background: white; border-radius: 24px 24px 0 0;
-      padding: 18px 18px 36px; width: 100%; max-width: 420px;
-      transform: translateY(16px); transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
-      box-shadow: 0 -4px 40px rgba(0,0,0,0.15);
-    }
-    @media (min-width: 480px) {
-      .modal { border-radius: 24px; padding: 28px 24px; transform: scale(0.95); box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-      .overlay.open .modal { transform: scale(1); }
-    }
-    .overlay.open .modal { transform: translateY(0); }
+    /* ── Level picker ── */
+    .lvl-section-label { font-size:12px; font-weight:700; color:var(--s600); margin-bottom:8px; }
+    .lvl-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; margin-bottom:18px; }
+    .lvl-btn { border:2px solid var(--s200); background:white; border-radius:10px; padding:9px 4px; font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; color:var(--s600); transition:all 0.15s; text-align:center; }
+    .lvl-btn:hover { border-color:var(--s400); color:var(--s800); }
+    .lvl-btn.sel { color:white !important; border-color:transparent !important; transform:scale(1.04); }
 
-    .m-handle {
-      width: 40px; height: 4px; background: var(--s200);
-      border-radius: 4px; margin: 0 auto 20px;
-    }
-    @media (min-width: 480px) { .m-handle { display: none; } }
+    /* ── Partner picker ── */
+    .partner-selector { display:flex; align-items:center; justify-content:space-between; padding:11px 14px; border:2px solid var(--s200); border-radius:12px; background:var(--s50); cursor:pointer; margin-bottom:16px; font-size:14px; font-weight:600; color:var(--s400); transition:border-color 0.15s,background 0.15s; user-select:none; }
+    .partner-selector:hover { border-color:var(--s400); }
+    .partner-selector.chosen { border-color:var(--g500); background:var(--g50); color:var(--g700); }
+    .partner-selector.open { border-color:var(--g500); border-bottom-left-radius:0; border-bottom-right-radius:0; }
+    .partner-chevron { font-size:12px; color:var(--s400); transition:transform 0.15s; }
+    .partner-selector.open .partner-chevron { transform:rotate(180deg); }
+    .partner-list { max-height:160px; overflow-y:auto; border:2px solid var(--g500); border-top:none; border-bottom-left-radius:12px; border-bottom-right-radius:12px; background:white; margin-bottom:16px; }
+    .partner-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--s100); transition:background 0.12s; user-select:none; }
+    .partner-item:last-child { border-bottom:none; }
+    .partner-item:hover { background:var(--g50); }
+    .partner-item-name { flex:1; font-size:14px; font-weight:600; color:var(--s700); }
+    .partner-none { color:var(--s400); font-size:13px; }
 
-    .m-title { font-size: 19px; font-weight: 900; color: var(--s900); margin-bottom: 4px; }
-    .m-sub { font-size: 13px; color: var(--s500); margin-bottom: 18px; }
+    /* ── Manual fill ── */
+    .mf-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:11px; border:2px solid var(--s200); background:var(--s50); margin-bottom:6px; cursor:pointer; transition:all 0.15s; user-select:none; }
+    .mf-item.sel { background:var(--g50); border-color:var(--g500); }
+    .mf-item.disabled { opacity:0.38; cursor:default; }
+    .mf-check { width:20px; height:20px; border-radius:6px; border:2px solid var(--s300,#cbd5e1); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; background:white; transition:all 0.15s; }
+    .mf-item.sel .mf-check { background:var(--g500); border-color:var(--g500); color:white; }
+    .mf-name { flex:1; font-size:14px; font-weight:600; color:var(--s700); }
+    .mf-item.sel .mf-name { color:var(--g700); }
+    .mf-counter { text-align:center; font-size:13px; color:var(--s500); margin-bottom:14px; }
+    .mf-counter span { font-weight:700; color:var(--g700); }
+    #mf-list { max-height:45vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 
-    .m-input {
-      width: 100%; border: 2px solid var(--s200); border-radius: 12px;
-      padding: 13px 16px; font-size: 16px; outline: none; font-family: inherit;
-      color: var(--s800); margin-bottom: 14px;
-      transition: border-color 0.15s, box-shadow 0.15s;
-      background: var(--s50);
-    }
-    .m-input:focus { border-color: var(--g500); box-shadow: 0 0 0 3px rgba(34,197,94,0.12); background: white; }
+    /* ── Name error ── */
+    .name-error { color:#ef4444; font-size:13px; margin:-8px 0 10px; display:none; }
 
-    .m-row { display: flex; gap: 10px; }
-    .m-btn {
-      flex: 1; border: none; cursor: pointer;
-      border-radius: 12px; padding: 14px;
-      font-size: 15px; font-weight: 700; font-family: inherit;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    .m-btn:hover { opacity: 0.88; }
-    .m-btn:active { transform: scale(0.97); }
-    .m-btn.cancel { background: var(--s100); color: var(--s600); }
-    .m-btn.ok     { background: linear-gradient(135deg, var(--g500), var(--g600)); color: white; box-shadow: 0 3px 10px rgba(22,163,74,0.3); }
+    /* ── Admin btn ── */
+    .admin-btn { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); color:white; cursor:pointer; border-radius:8px; padding:4px 10px; font-size:12px; font-weight:700; font-family:inherit; margin-top:0; transition:background 0.15s; }
+    .admin-btn:hover { background:rgba(255,255,255,0.22); }
+    .admin-btn.unlocked { background:rgba(253,230,138,0.18); border-color:rgba(253,230,138,0.4); color:#fde68a; }
 
-    .court-opt {
-      width: 100%; border: none; cursor: pointer;
-      border-radius: 12px; padding: 13px 16px;
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 8px; font-family: inherit;
-      font-size: 14px; font-weight: 700; color: white;
-      transition: opacity 0.15s, transform 0.1s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    .court-opt:hover { opacity: 0.9; transform: translateY(-1px); }
-    .court-opt:active { transform: scale(0.98); }
-    .court-opt-spots { font-size: 12px; font-weight: 500; opacity: 0.85; }
-
-    .m-cancel-full {
-      width: 100%; margin-top: 4px; border: none; cursor: pointer;
-      border-radius: 12px; padding: 13px;
-      background: var(--s100); color: var(--s600);
-      font-size: 14px; font-weight: 700; font-family: inherit;
-      transition: background 0.15s;
-    }
-    .m-cancel-full:hover { background: var(--s200); }
-
-    /* ── Level badges ───────────────────────────── */
-    .lvl {
-      display: inline-block;
-      width: 10px; height: 10px; border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    /* ── Next (on-deck) court cards ────────────── */
-    .next-card {
-      border: 2px dashed var(--s300, #cbd5e1);
-      box-shadow: none;
-      opacity: 0.92;
-    }
-    .next-card .court-head { opacity: 0.78; }
-
-    /* ── Manual fill modal ──────────────────────── */
-    .mf-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 11px;
-      border: 2px solid var(--s200); background: var(--s50);
-      margin-bottom: 6px; cursor: pointer;
-      transition: all 0.15s; user-select: none;
-    }
-    .mf-item.sel { background: var(--g50); border-color: var(--g500); }
-    .mf-item.disabled { opacity: 0.38; cursor: default; }
-    .mf-check {
-      width: 20px; height: 20px; border-radius: 6px;
-      border: 2px solid var(--s300, #cbd5e1);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; flex-shrink: 0; background: white;
-      transition: all 0.15s;
-    }
-    .mf-item.sel .mf-check { background: var(--g500); border-color: var(--g500); color: white; }
-    .mf-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--s700); }
-    .mf-item.sel .mf-name { color: var(--g700); }
-    .mf-counter {
-      text-align: center; font-size: 13px; color: var(--s500);
-      margin-bottom: 14px;
-    }
-    .mf-counter span { font-weight: 700; color: var(--g700); }
-
-    /* ── Partner picker ────────────────────────── */
-    .partner-selector {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 11px 14px; border: 2px solid var(--s200); border-radius: 12px;
-      background: var(--s50); cursor: pointer; margin-bottom: 16px;
-      font-size: 14px; font-weight: 600; color: var(--s400);
-      transition: border-color 0.15s, background 0.15s;
-      user-select: none;
-    }
-    .partner-selector:hover { border-color: var(--s400); }
-    .partner-selector.chosen { border-color: var(--g500); background: var(--g50); color: var(--g700); }
-    .partner-selector.open { border-color: var(--g500); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-    .partner-chevron { font-size: 12px; color: var(--s400); transition: transform 0.15s; }
-    .partner-selector.open .partner-chevron { transform: rotate(180deg); }
-    .partner-list {
-      max-height: 160px; overflow-y: auto;
-      border: 2px solid var(--g500); border-top: none;
-      border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
-      background: white; margin-bottom: 16px;
-    }
-    .partner-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; cursor: pointer;
-      border-bottom: 1px solid var(--s100);
-      transition: background 0.12s; user-select: none;
-    }
-    .partner-item:last-child { border-bottom: none; }
-    .partner-item:hover { background: var(--g50); }
-    .partner-item-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--s700); }
-    .partner-none { color: var(--s400); font-size: 13px; }
-
-    /* ── Pair badge ─────────────────────────────── */
-    .pair-badge {
-      font-size: 10px; font-weight: 700;
-      padding: 2px 7px; border-radius: 20px;
-      background: #fef9c3; color: #854d0e;
-      border: 1px solid #fde047;
-      white-space: nowrap; flex-shrink: 0;
-    }
-
-    /* ── Admin lock button ──────────────────────── */
-    .admin-btn {
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.22);
-      color: white; cursor: pointer;
-      border-radius: 8px; padding: 4px 10px;
-      font-size: 12px; font-weight: 700;
-      font-family: inherit; margin-top: 5px;
-      transition: background 0.15s; display: block;
-    }
-    .admin-btn:hover { background: rgba(255,255,255,0.22); }
-    .admin-btn.unlocked { background: rgba(253,230,138,0.18); border-color: rgba(253,230,138,0.4); color: #fde68a; }
-    .c-btn.c-undo {
-      background: rgba(251,191,36,0.13); border: 1.5px solid rgba(251,191,36,0.45);
-      color: #92400e;
-    }
-    .c-btn.c-undo:hover { background: rgba(251,191,36,0.26); }
-    .sec-add-btn {
-      margin-left: auto; flex-shrink: 0;
-      background: white; border: 1.5px solid var(--g500);
-      color: var(--g700); cursor: pointer; border-radius: 7px;
-      padding: 2px 9px; font-size: 11px; font-weight: 700;
-      font-family: inherit; transition: background 0.15s, color 0.15s;
-    }
-    .sec-add-btn:hover { background: var(--g500); color: white; }
-    .court-rm-btn {
-      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3);
-      color: rgba(255,255,255,0.85); cursor: pointer; border-radius: 5px;
-      padding: 0px 6px; font-size: 15px; font-weight: 700; line-height: 1.4;
-      font-family: inherit; margin-left: auto;
-      transition: background 0.15s;
-    }
-    .court-rm-btn:hover { background: rgba(220,38,38,0.5); color: white; }
-
-    /* ── Level picker (join modal) ──────────────── */
-    .lvl-section-label {
-      font-size: 12px; font-weight: 700; color: var(--s600);
-      margin-bottom: 8px;
-    }
-    .lvl-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 6px; margin-bottom: 18px;
-    }
-    .lvl-btn {
-      border: 2px solid var(--s200); background: white;
-      border-radius: 10px; padding: 9px 4px;
-      font-size: 13px; font-weight: 800; cursor: pointer;
-      font-family: inherit; color: var(--s600);
-      transition: all 0.15s; text-align: center;
-    }
-    .lvl-btn:hover { border-color: var(--s400); color: var(--s800); }
-    .lvl-btn.sel {
-      color: white !important;
-      border-color: transparent !important;
-      transform: scale(1.04);
-    }
-
-    /* ── MF modal scrollable list ───────────────────── */
-    #mf-list {
-      max-height: 45vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    /* ── Name error in join modal ───────────────────── */
-    .name-error {
-      color: #ef4444; font-size: 13px;
-      margin: -8px 0 10px; display: none;
-    }
-
-    /* ── Editable level dot ─────────────────────────── */
-    .lvl.editable {
-      cursor: pointer;
-      box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 0 0 3px rgba(0,0,0,0.15);
-    }
-    .lvl.editable:hover { opacity: 0.75; }
+    /* ── History panel ── */
+    .history-panel { position:fixed; right:0; top:0; bottom:0; width:300px; max-width:90vw; background:white; z-index:200; transform:translateX(100%); transition:transform 0.3s cubic-bezier(.4,0,.2,1); box-shadow:-4px 0 32px rgba(0,0,0,0.14); display:flex; flex-direction:column; }
+    .history-panel.open { transform:translateX(0); }
+    .history-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:199; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+    .history-backdrop.open { opacity:1; pointer-events:all; }
+    .history-header { display:flex; align-items:center; justify-content:space-between; padding:18px 16px 14px; border-bottom:1px solid var(--s100); background:linear-gradient(135deg,var(--g900),var(--g700)); color:white; flex-shrink:0; }
+    .history-header-title { font-size:15px; font-weight:900; font-family:'Fredoka One',cursive; }
+    .history-close-btn { background:rgba(255,255,255,0.15); border:none; cursor:pointer; color:white; width:28px; height:28px; border-radius:8px; font-size:16px; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+    .history-close-btn:hover { background:rgba(255,255,255,0.28); }
+    .history-list { flex:1; overflow-y:auto; padding:10px 12px 20px; -webkit-overflow-scrolling:touch; }
+    .history-empty { text-align:center; color:var(--s400); padding:40px 16px; font-size:14px; }
+    .history-empty-icon { font-size:36px; margin-bottom:10px; }
+    .history-item { padding:10px 12px; border-radius:12px; border:1.5px solid var(--s100); background:var(--s50); margin-bottom:8px; }
+    .history-meta { font-size:11px; font-weight:700; color:var(--s400); margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+    .history-court-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .history-players { display:flex; flex-direction:column; gap:2px; }
+    .history-player { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--s700); }
   </style>
 </head>
 <body>
 
-<!-- ── Header ──────────────────────────────────────── -->
 <header>
   <svg class="hd-deco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140" fill="none">
-    <circle cx="50" cy="128" r="10" fill="white"/>
-    <circle cx="50" cy="128" r="5" fill="white" opacity="0.6"/>
-    <line x1="50" y1="118" x2="12" y2="18" stroke="white" stroke-width="1.5"/>
-    <line x1="50" y1="118" x2="22" y2="13" stroke="white" stroke-width="1.5"/>
-    <line x1="50" y1="118" x2="35" y2="9" stroke="white" stroke-width="1.5"/>
-    <line x1="50" y1="118" x2="50" y2="8" stroke="white" stroke-width="1.5"/>
-    <line x1="50" y1="118" x2="65" y2="9" stroke="white" stroke-width="1.5"/>
-    <line x1="50" y1="118" x2="78" y2="13" stroke="white" stroke-width="1.5"/>
+    <circle cx="50" cy="128" r="10" fill="white"/><circle cx="50" cy="128" r="5" fill="white" opacity="0.6"/>
+    <line x1="50" y1="118" x2="12" y2="18" stroke="white" stroke-width="1.5"/><line x1="50" y1="118" x2="22" y2="13" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="35" y2="9" stroke="white" stroke-width="1.5"/><line x1="50" y1="118" x2="50" y2="8" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="65" y2="9" stroke="white" stroke-width="1.5"/><line x1="50" y1="118" x2="78" y2="13" stroke="white" stroke-width="1.5"/>
     <line x1="50" y1="118" x2="88" y2="18" stroke="white" stroke-width="1.5"/>
     <path d="M12 18 Q50 2 88 18" stroke="white" stroke-width="2.5"/>
     <path d="M12 18 Q50 2 88 18 L50 118 Z" fill="white" opacity="0.08"/>
   </svg>
   <svg class="hd-deco2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140" fill="none">
     <circle cx="50" cy="128" r="10" fill="white"/>
-    <line x1="50" y1="118" x2="12" y2="18" stroke="white" stroke-width="1.5"/>
-    <line x1="50" y1="118" x2="35" y2="9" stroke="white" stroke-width="1.5"/>
-    <line x1="50" y1="118" x2="50" y2="8" stroke="white" stroke-width="1.5"/>
-    <line x1="50" y1="118" x2="65" y2="9" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="12" y2="18" stroke="white" stroke-width="1.5"/><line x1="50" y1="118" x2="35" y2="9" stroke="white" stroke-width="1.5"/>
+    <line x1="50" y1="118" x2="50" y2="8" stroke="white" stroke-width="1.5"/><line x1="50" y1="118" x2="65" y2="9" stroke="white" stroke-width="1.5"/>
     <line x1="50" y1="118" x2="88" y2="18" stroke="white" stroke-width="1.5"/>
     <path d="M12 18 Q50 2 88 18" stroke="white" stroke-width="2.5"/>
     <path d="M12 18 Q50 2 88 18 L50 118 Z" fill="white" opacity="0.08"/>
@@ -581,18 +283,16 @@
     <div class="hd-right">
       <div class="hd-online">👥 <span id="online-count">—</span> online</div>
       <div id="my-status"></div>
-      <div style="display:flex;gap:6px;margin-top:5px">
-        <button class="admin-btn" style="margin-top:0" onclick="showQrModal()">📷 QR</button>
-        <button class="admin-btn" style="margin-top:0" id="admin-btn" onclick="onAdminBtnClick()">🔒 Admin</button>
+      <div class="hd-btn-row">
+        <button class="admin-btn" onclick="toggleHistory()">📜 History</button>
+        <button class="admin-btn" onclick="showQrModal()">📷 QR</button>
+        <button class="admin-btn" id="admin-btn" onclick="onAdminBtnClick()">🔒 Admin</button>
       </div>
     </div>
   </div>
 </header>
 
-<!-- ── Main ────────────────────────────────────────── -->
 <main>
-
-  <!-- How-to -->
   <div class="howto" id="howto">
     <div class="howto-icon">💡</div>
     <div class="howto-body">
@@ -602,7 +302,6 @@
   </div>
   <button class="main-join-btn" onclick="showJoinModal()">+ Join Queue</button>
 
-  <!-- Courts -->
   <div class="sec-label">
     Courts
     <div class="sec-chips" id="court-summary"></div>
@@ -610,16 +309,14 @@
   </div>
   <div class="courts-grid" id="courts-grid"></div>
 
-  <!-- On Deck -->
   <div class="sec-label" style="margin-top:6px">
     On Deck
     <div class="sec-chips" id="next-summary"></div>
   </div>
   <div class="courts-grid" id="next-grid"></div>
 
-  <!-- Queue -->
   <div class="sec-label">Waiting Queue</div>
-  <div class="q-card">
+  <div class="q-card" id="q-card">
     <div class="q-head">
       <div class="q-title-row">
         <span class="q-title">Waiting</span>
@@ -629,18 +326,15 @@
     </div>
     <div id="q-list"></div>
   </div>
-
 </main>
 
-<!-- ── Join Modal ───────────────────────────────────── -->
+<!-- Join Modal -->
 <div class="overlay" id="join-modal" onclick="if(event.target===this)hideJoinModal()">
   <div class="modal">
     <div class="m-handle"></div>
     <div class="m-title">Join Queue</div>
     <div class="m-sub">Enter your name to join</div>
-    <input class="m-input" id="name-input" type="text" placeholder="Your name"
-      maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false"
-      onkeydown="if(event.key==='Enter')submitJoin()" oninput="clearNameError()">
+    <input class="m-input" id="name-input" type="text" placeholder="Your name" maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')submitJoin()" oninput="clearNameError()">
     <div class="name-error" id="name-error"></div>
     <div class="lvl-section-label">Select your level</div>
     <div class="lvl-grid" id="lvl-picker"></div>
@@ -654,7 +348,7 @@
   </div>
 </div>
 
-<!-- ── Assign Modal ─────────────────────────────────── -->
+<!-- Assign Modal -->
 <div class="overlay" id="assign-modal" onclick="if(event.target===this)hideAssignModal()">
   <div class="modal">
     <div class="m-handle"></div>
@@ -665,7 +359,7 @@
   </div>
 </div>
 
-<!-- ── Manual Fill Modal ────────────────────────────── -->
+<!-- Manual Fill Modal -->
 <div class="overlay" id="mf-modal" onclick="if(event.target===this)hideMfModal()">
   <div class="modal">
     <div class="m-handle"></div>
@@ -679,7 +373,7 @@
   </div>
 </div>
 
-<!-- ── QR Modal ──────────────────────────────────────── -->
+<!-- QR Modal -->
 <div class="overlay" id="qr-modal" onclick="if(event.target===this)closeModal('qr-modal')">
   <div class="modal" style="text-align:center">
     <div class="m-handle"></div>
@@ -690,7 +384,7 @@
   </div>
 </div>
 
-<!-- ── Edit Level Modal ──────────────────────────────── -->
+<!-- Edit Level Modal -->
 <div class="overlay" id="lvl-modal" onclick="if(event.target===this)closeLvlModal()">
   <div class="modal">
     <div class="m-handle"></div>
@@ -701,15 +395,13 @@
   </div>
 </div>
 
-<!-- ── PIN Modal ─────────────────────────────────────── -->
+<!-- PIN Modal -->
 <div class="overlay" id="pin-modal" onclick="if(event.target===this)hidePinModal()">
   <div class="modal">
     <div class="m-handle"></div>
     <div class="m-title">Admin Login</div>
     <div class="m-sub">Enter PIN to unlock admin controls</div>
-    <input class="m-input" id="pin-input" type="password" placeholder="PIN"
-      maxlength="20" autocomplete="off"
-      onkeydown="if(event.key==='Enter')submitPin()">
+    <input class="m-input" id="pin-input" type="password" placeholder="PIN" maxlength="20" autocomplete="off" onkeydown="if(event.key==='Enter')submitPin()">
     <div id="pin-error" style="color:#ef4444;font-size:13px;margin:-8px 0 12px;display:none">Wrong PIN</div>
     <div class="m-row">
       <button class="m-btn cancel" onclick="hidePinModal()">Cancel</button>
@@ -718,28 +410,35 @@
   </div>
 </div>
 
+<!-- History Panel -->
+<div class="history-backdrop" id="history-backdrop" onclick="toggleHistory()"></div>
+<div class="history-panel" id="history-panel">
+  <div class="history-header">
+    <span class="history-header-title">📜 Game History</span>
+    <button class="history-close-btn" onclick="toggleHistory()">✕</button>
+  </div>
+  <div class="history-list" id="history-list"></div>
+</div>
+
 <script>
 const socket = io();
-let IDS = [6, 7, 8, 9, 10];
-const INITIAL_IDS = [6, 7, 8, 9, 10]; // fixed base courts — On Deck always uses these
-const COURT_COLORS = {
-  1:'#f59e0b', 2:'#f97316', 3:'#ec4899', 4:'#8b5cf6', 5:'#06b6d4',
-  6:'#16a34a', 7:'#0d9488', 8:'#0891b2', 9:'#7c3aed', 10:'#65a30d',
-};
+let IDS = [6,7,8,9,10];
+const INITIAL_IDS = [6,7,8,9,10];
+const COURT_COLORS = { 1:'#f59e0b',2:'#f97316',3:'#ec4899',4:'#8b5cf6',5:'#06b6d4',6:'#16a34a',7:'#0d9488',8:'#0891b2',9:'#7c3aed',10:'#65a30d' };
 function courtColor(id) { return COURT_COLORS[id] || '#6b7280'; }
-const EXTRA_IDS = [1, 2, 3, 4, 5];
+const EXTRA_IDS = [1,2,3,4,5];
 
-const LEVELS = ['advanced', 'intermediate', 'novice', 'beginner'];
+const LEVELS = ['advanced','intermediate','novice','beginner'];
 const LEVEL_COLORS = {
   'advanced'    : '#7c3aed',
   'intermediate': '#2563eb',
-  'novice'      : '#ea580c',
-  'beginner'    : '#dc2626',
+  'novice'      : '#16a34a',
+  'beginner'    : '#f59e0b',
 };
 
-const ADMIN_PIN = '1234'; // ← change this to your own PIN
+const ADMIN_PIN = '1234';
 
-let state = { courts: {}, next: {}, queue: [], players: {} };
+let state = { courts:{}, next:{}, queue:[], players:{}, history:[] };
 let myName  = localStorage.getItem('bmt_name')  || '';
 let myLevel = localStorage.getItem('bmt_level') || '';
 let isAdmin = localStorage.getItem('bmt_admin') === '1';
@@ -748,49 +447,33 @@ let assigningPlayer = null;
 socket.on('state_update', s => { state = s; if (s.courtIds) IDS = s.courtIds; render(); });
 socket.on('connected_count', n => { document.getElementById('online-count').textContent = n; });
 
-// ── Render ────────────────────────────────────────────
-
+// ── Render ─────────────────────────────────────────────
 function render() {
-  renderHowto();
-  renderSummary();
-  renderCourts();
-  renderNext();
-  renderQueue();
-  renderMyStatus();
-  renderAdminBtn();
+  renderHowto(); renderSummary(); renderCourts(); renderNext();
+  renderQueue(); renderMyStatus(); renderAdminBtn(); renderHistory();
 }
 
 function renderAdminBtn() {
   const btn = document.getElementById('admin-btn');
-  if (isAdmin) {
-    btn.textContent = '🔓 Admin';
-    btn.classList.add('unlocked');
-  } else {
-    btn.textContent = '🔒 Admin';
-    btn.classList.remove('unlocked');
-  }
+  if (isAdmin) { btn.textContent = '🔓 Admin'; btn.classList.add('unlocked'); }
+  else         { btn.textContent = '🔒 Admin'; btn.classList.remove('unlocked'); }
 }
 
 function renderHowto() {
   if (isAdmin) {
     document.getElementById('howto-title').textContent = 'Admin Flow';
     document.getElementById('howto-steps').innerHTML = `
-      <span class="howto-step">① Fill On Deck</span>
-      <span class="howto-arrow">→</span>
-      <span class="howto-step">② Send to court when full</span>
-      <span class="howto-arrow">→</span>
-      <span class="howto-step">③ End & Re-queue when done</span>`;
+      <span class="howto-step">① Fill On Deck</span><span class="howto-arrow">→</span>
+      <span class="howto-step">② Send to court when full</span><span class="howto-arrow">→</span>
+      <span class="howto-step">③ End & Re-queue when done</span>
+      <div style="margin-top:6px;font-size:11px;color:var(--g700);width:100%">💡 Drag player names between queue, On Deck and courts</div>`;
   } else {
     document.getElementById('howto-title').textContent = 'How to Play';
     document.getElementById('howto-steps').innerHTML = `
-      <span class="howto-step">① Tap "+ Join Queue" to sign up</span>
-      <span class="howto-arrow">→</span>
-      <span class="howto-step">② Watch for your name in On Deck</span>
-      <span class="howto-arrow">→</span>
-      <span class="howto-step">③ Head to your court when moved up</span>
-      <span class="howto-arrow">→</span>
-      <span class="howto-step">④ Re-join queue after game</span>
-      <div style="margin-top:6px;font-size:11px;color:var(--g700);width:100%">💡 Tip: Scroll down to see the Waiting Queue</div>`;
+      <span class="howto-step">① Tap "+ Join Queue"</span><span class="howto-arrow">→</span>
+      <span class="howto-step">② Watch for your name in On Deck</span><span class="howto-arrow">→</span>
+      <span class="howto-step">③ Head to your court</span><span class="howto-arrow">→</span>
+      <span class="howto-step">④ Re-join after game</span>`;
   }
 }
 
@@ -816,13 +499,9 @@ function renderCourts() {
 
 function renderNext() {
   const staged = INITIAL_IDS.filter(id => state.next[id]?.players.length > 0);
-  let chips = '';
-  if (staged.length) chips = staged.map(id => {
-    const slot = IDS.indexOf(id) + 1;
-    return `<span class="sec-chip">⏳ #${slot}: ${state.next[id].players.length}/4</span>`;
-  }).join('');
+  let chips = staged.map(id => `<span class="sec-chip">⏳ #${IDS.indexOf(id)+1}: ${state.next[id].players.length}/4</span>`).join('');
   document.getElementById('next-summary').innerHTML = chips;
-  document.getElementById('next-grid').innerHTML = INITIAL_IDS.map((id, i) => buildNextCourt(id, i + 1)).join('');
+  document.getElementById('next-grid').innerHTML = INITIAL_IDS.map((id,i) => buildNextCourt(id, i+1)).join('');
 }
 
 function buildNextCourt(id, slot) {
@@ -837,8 +516,8 @@ function buildNextCourt(id, slot) {
     if (p) {
       const me = p === myName;
       return `<div class="p-cell filled${me?' me':''}">
-        <span class="p-name${me?' me':''}" style="max-width:50px" title="${esc(p)}">${esc(p)}</span>
-        ${lvlBadge(p)}
+        <span class="p-name${me?' me':''}" style="max-width:52px" title="${esc(p)}">${esc(p)}</span>
+        ${lvlBadge(p, isAdmin)}
         ${isAdmin ? `<button class="p-rm" onclick="removeFromNext(${id},'${escJs(p)}')">×</button>` : ''}
       </div>`;
     }
@@ -850,17 +529,14 @@ function buildNextCourt(id, slot) {
 
   let actions = '';
   if (isAdmin) {
-    if (count === 4) {
+    if (count === 4)
       actions = `${undoBtn}<button class="c-btn fill" style="background:${col}" onclick="showPromoteModal(${id})">→ Send to Court</button>`;
-    } else if (canFill) {
-      actions = `${undoBtn}
-        <button class="c-btn fill" style="background:${col};opacity:0.85" onclick="socket.emit('fill_next',${id})">Auto</button>
-        <button class="c-btn eq" onclick="showMfModal(${id},'next')">Pick</button>`;
-    } else if (count > 0) {
+    else if (canFill)
+      actions = `${undoBtn}<button class="c-btn fill" style="background:${col};opacity:0.85" onclick="socket.emit('fill_next',${id})">Auto</button><button class="c-btn eq" onclick="showMfModal(${id},'next')">Pick</button>`;
+    else if (count > 0)
       actions = `${undoBtn}<button class="c-btn dim" disabled>Need more players</button>`;
-    } else {
+    else
       actions = `<button class="c-btn dim" disabled>Waiting for players</button>`;
-    }
   } else if (count < 4) {
     actions = `<button class="c-btn dim" disabled>${count === 0 ? 'On Deck' : `${count}/4`}</button>`;
   }
@@ -882,8 +558,6 @@ function buildCourt(id) {
   const col   = courtColor(id);
   const count = c.players.length;
   const full  = count === 4;
-  const canFill = count < 4 && state.queue.length > 0;
-
   const statusLabel = c.playing ? '● Live' : full ? '◎ Ready' : `${count}/4`;
   const statusClass = (c.playing || full) ? 'live' : '';
 
@@ -892,8 +566,8 @@ function buildCourt(id) {
     if (p) {
       const me = p === myName;
       return `<div class="p-cell filled${me?' me':''}">
-        <span class="p-name${me?' me':''}" style="max-width:50px" title="${esc(p)}">${esc(p)}</span>
-        ${lvlBadge(p)}
+        <span class="p-name${me?' me':''}" style="max-width:52px" title="${esc(p)}">${esc(p)}</span>
+        ${lvlBadge(p, isAdmin)}
         ${isAdmin ? `<button class="p-rm" onclick="removeFromCourt(${id},'${escJs(p)}')">×</button>` : ''}
       </div>`;
     }
@@ -904,20 +578,15 @@ function buildCourt(id) {
   let actions = '';
   if (isAdmin) {
     if (c.playing || full) {
-      const undoBtn = (!c.playing && hasCourtUndo)
-        ? `<button class="c-btn c-undo" onclick="undoCourtAction(${id})" title="Undo send to court">↩ Undo Send</button>` : '';
+      const undoBtn = (!c.playing && hasCourtUndo) ? `<button class="c-btn c-undo" onclick="undoCourtAction(${id})">↩ Undo Send</button>` : '';
       actions = `${undoBtn}<button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue</button>`;
     } else if (count === 0 && hasCourtUndo) {
-      actions = `<button class="c-btn c-undo" onclick="undoCourtAction(${id})" title="Restore players back to court">↩ Undo End</button>`;
+      actions = `<button class="c-btn c-undo" onclick="undoCourtAction(${id})">↩ Undo End</button>`;
     } else {
-      const msg = count === 0 ? 'Waiting for players' : `${count}/4 – need more`;
-      actions = `<button class="c-btn dim" disabled>${msg}</button>`;
+      actions = `<button class="c-btn dim" disabled>${count === 0 ? 'Waiting for players' : `${count}/4 – need more`}</button>`;
     }
-  } else {
-    if (!c.playing && !full) {
-      const msg = count === 0 ? 'Waiting for players' : `${count}/4 – need more`;
-      actions = `<button class="c-btn dim" disabled>${msg}</button>`;
-    }
+  } else if (!c.playing && !full) {
+    actions = `<button class="c-btn dim" disabled>${count === 0 ? 'Waiting for players' : `${count}/4 – need more`}</button>`;
   }
 
   const canRemove = isAdmin && !c.playing && count === 0 && (state.next[id]?.players.length ?? 0) === 0;
@@ -926,7 +595,7 @@ function buildCourt(id) {
       <div class="court-head" style="background:${col}">
         <span class="court-name">Court ${id}</span>
         <span class="court-badge ${statusClass}">${statusLabel}</span>
-        ${canRemove ? `<button class="court-rm-btn" onclick="removeCourt(${id})" title="Remove court">−</button>` : ''}
+        ${canRemove ? `<button class="court-rm-btn" onclick="removeCourt(${id})">−</button>` : ''}
       </div>
       <div class="p-grid">${cells}</div>
       <div class="c-actions">${actions}</div>
@@ -937,16 +606,10 @@ function renderQueue() {
   const badge = document.getElementById('q-badge');
   const list  = document.getElementById('q-list');
   badge.textContent = `${state.queue.length} players`;
-
   if (!state.queue.length) {
-    list.innerHTML = `<div class="q-empty">
-      <div class="q-empty-icon">🏸</div>
-      <div>No one waiting</div>
-      <div class="q-empty-hint">Tap "+ Join Queue" to start</div>
-    </div>`;
+    list.innerHTML = `<div class="q-empty"><div class="q-empty-icon">🏸</div><div>No one waiting</div><div class="q-empty-hint">Tap "+ Join Queue" to start</div></div>`;
     return;
   }
-
   const avail = IDS.filter(id => state.courts[id]?.players.length < 4);
   list.innerHTML = `<div class="q-list">` + state.queue.map((name, i) => {
     const me = name === myName;
@@ -954,7 +617,7 @@ function renderQueue() {
     return `<div class="q-item${me?' me':''}">
       <span class="q-pos${i<4?' next':''}">${i+1}</span>
       <span class="q-name${me?' me':''}" title="${esc(name)}">${esc(name)}${me?' ★':''}</span>
-      ${lvlBadge(name, true)}
+      ${lvlBadge(name, isAdmin)}
       ${partner ? `<span class="pair-badge" title="Paired with ${esc(partner)}">🔗 ${esc(partner)}</span>` : ''}
       <div class="q-actions">
         ${isAdmin && partner ? `<button class="q-rm-btn" onclick="socket.emit('unlink_pair','${escJs(name)}')" title="Break pair" style="font-size:14px">✂️</button>` : ''}
@@ -967,77 +630,67 @@ function renderQueue() {
 
 function renderMyStatus() {
   const el = document.getElementById('my-status');
-  if (!myName) {
-    el.innerHTML = `<span style="color:rgba(255,255,255,0.45);font-size:12px;cursor:pointer" onclick="showJoinModal()">Tap to register</span>`;
+  if (!myName) { el.innerHTML = `<span style="color:rgba(255,255,255,0.45);font-size:12px;cursor:pointer" onclick="showJoinModal()">Tap to register</span>`; return; }
+  const onCourt = IDS.find(id => state.courts[id]?.players.includes(myName));
+  const onDeck  = IDS.find(id => state.next[id]?.players.includes(myName));
+  const qPos    = state.queue.indexOf(myName);
+  if (onCourt)     el.innerHTML = `<span style="color:#86efac;font-size:12px">✓ Court ${onCourt}</span>`;
+  else if (onDeck) el.innerHTML = `<span style="color:#fdba74;font-size:12px">⏳ On Deck ${IDS.indexOf(onDeck)+1}</span>`;
+  else if (qPos>=0)el.innerHTML = `<span style="color:#fde68a;font-size:12px">Queue #${qPos+1}</span>`;
+  else             el.innerHTML = `<span style="color:rgba(255,255,255,0.5);font-size:12px">${esc(myName)}</span>`;
+}
+
+// ── History ────────────────────────────────────────────
+let historyOpen = false;
+
+function toggleHistory() {
+  historyOpen = !historyOpen;
+  document.getElementById('history-panel').classList.toggle('open', historyOpen);
+  document.getElementById('history-backdrop').classList.toggle('open', historyOpen);
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const history = state.history || [];
+  if (!history.length) {
+    list.innerHTML = `<div class="history-empty"><div class="history-empty-icon">🏸</div><div>No games completed yet</div></div>`;
     return;
   }
-  const onCourt  = IDS.find(id => state.courts[id]?.players.includes(myName));
-  const onDeck   = IDS.find(id => state.next[id]?.players.includes(myName));
-  const qPos     = state.queue.indexOf(myName);
-  if (onCourt) {
-    el.innerHTML = `<span style="color:#86efac;font-size:12px">✓ Court ${onCourt}</span>`;
-  } else if (onDeck) {
-    el.innerHTML = `<span style="color:#fdba74;font-size:12px">⏳ On Deck ${IDS.indexOf(onDeck) + 1}</span>`;
-  } else if (qPos >= 0) {
-    el.innerHTML = `<span style="color:#fde68a;font-size:12px">Queue #${qPos+1}</span>`;
-  } else {
-    el.innerHTML = `<span style="color:rgba(255,255,255,0.5);font-size:12px">${esc(myName)}</span>`;
-  }
+  list.innerHTML = history.map(h => {
+    const mins = Math.round((Date.now() - h.time) / 60000);
+    const timeStr = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.floor(mins/60)}h ${mins%60}m ago`;
+    const players = h.players || [];
+    return `<div class="history-item">
+      <div class="history-meta">
+        <span class="history-court-dot" style="background:${courtColor(h.courtId)}"></span>
+        Court ${h.courtId} · ${timeStr}
+      </div>
+      <div class="history-players">
+        ${players.map(p => `<div class="history-player">${lvlBadge(p)} ${esc(p)}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
 }
 
-// ── Actions ───────────────────────────────────────────
-
-function undoDeck(courtId) {
-  socket.emit('undo_deck', courtId);
-}
-function undoCourtAction(courtId) {
-  socket.emit('undo_court_action', courtId);
-}
-function addCourt() {
-  socket.emit('add_court');
-}
-function removeCourt(courtId) {
-  socket.emit('remove_court', courtId);
-}
-function endGame(courtId, toQueue) {
-  socket.emit('end_game', { courtId, toQueue });
-}
-function removeFromCourt(courtId, name) {
-  socket.emit('remove_from_court', { courtId, name });
-}
-function removeFromQueue(name) {
-  socket.emit('remove_from_queue', name);
-  if (name === myName) { myName = ''; localStorage.removeItem('bmt_name'); }
-}
-function removeFromNext(courtId, name) {
-  socket.emit('remove_from_next', { courtId, name });
-}
-
-// ── Level helpers ─────────────────────────────────────
-
+// ── Level helpers ──────────────────────────────────────
 function lvlBadge(name, editable = false) {
   const lvl = state.players?.[name];
   if (!lvl) return '';
   const col = LEVEL_COLORS[lvl] || '#64748b';
-  if (editable && isAdmin) {
+  if (editable && isAdmin)
     return `<span class="lvl editable" style="background:${col}" title="Edit level: ${lvl}" onclick="showLvlModal('${escJs(name)}')"></span>`;
-  }
   return `<span class="lvl" style="background:${col}" title="${lvl}"></span>`;
 }
 
 function renderLvlPicker() {
   document.getElementById('lvl-picker').innerHTML = LEVELS.map(l => {
-    const col = LEVEL_COLORS[l];
-    const sel = l === myLevel;
-    return `<button class="lvl-btn${sel?' sel':''}"
-      style="${sel?`background:${col};`:''}color:${sel?'white':col}"
-      onclick="selectLevel('${l}')">${l}</button>`;
+    const col = LEVEL_COLORS[l]; const sel = l === myLevel;
+    return `<button class="lvl-btn${sel?' sel':''}" style="${sel?`background:${col};`:''}color:${sel?'white':col}" onclick="selectLevel('${l}')">${l}</button>`;
   }).join('');
 }
 
 function selectLevel(l) {
-  myLevel = l;
-  localStorage.setItem('bmt_level', l);
+  myLevel = l; localStorage.setItem('bmt_level', l);
   const lbl = document.querySelector('#join-modal .lvl-section-label');
   if (lbl) lbl.style.color = '';
   const picker = document.getElementById('lvl-picker');
@@ -1045,63 +698,37 @@ function selectLevel(l) {
   renderLvlPicker();
 }
 
-// ── Join ──────────────────────────────────────────────
-
-let myPartner = null;
-let partnerDropOpen = false;
+// ── Join ───────────────────────────────────────────────
+let myPartner = null, partnerDropOpen = false;
 
 function renderPartnerSelector() {
-  const sel = document.getElementById('partner-selector');
+  const sel  = document.getElementById('partner-selector');
   const list = document.getElementById('partner-list');
-
-  // update selector button
-  sel.className = 'partner-selector' +
-    (myPartner ? ' chosen' : '') +
-    (partnerDropOpen ? ' open' : '');
+  sel.className = 'partner-selector' + (myPartner?' chosen':'') + (partnerDropOpen?' open':'');
   sel.innerHTML = myPartner
     ? `<span>👥 ${esc(myPartner)}</span><span class="partner-chevron">▾</span>`
     : `<span>Select a partner...</span><span class="partner-chevron">▾</span>`;
-
-  // show/hide dropdown
   list.style.display = partnerDropOpen ? '' : 'none';
   if (!partnerDropOpen) return;
-
   const others = state.queue.filter(n => n !== document.getElementById('name-input').value.trim());
-  if (!others.length) {
-    list.innerHTML = `<div class="partner-item"><span class="partner-none">No one in queue yet</span></div>`;
-    return;
-  }
-  list.innerHTML = others.map(n => `
-    <div class="partner-item" onclick="selectPartner('${escJs(n)}')">
-      <span class="partner-item-name">${esc(n)}</span>
-      ${lvlBadge(n)}
-    </div>`).join('');
+  list.innerHTML = others.length
+    ? others.map(n => `<div class="partner-item" onclick="selectPartner('${escJs(n)}')"><span class="partner-item-name">${esc(n)}</span>${lvlBadge(n)}</div>`).join('')
+    : `<div class="partner-item"><span class="partner-none">No one in queue yet</span></div>`;
 }
 
-function togglePartnerDrop() {
-  partnerDropOpen = !partnerDropOpen;
-  renderPartnerSelector();
-}
-
-function selectPartner(name) {
-  myPartner = name;
-  partnerDropOpen = false;
-  renderPartnerSelector();
-}
+function togglePartnerDrop() { partnerDropOpen = !partnerDropOpen; renderPartnerSelector(); }
+function selectPartner(name) { myPartner = name; partnerDropOpen = false; renderPartnerSelector(); }
 
 function showJoinModal() {
-  const inp = document.getElementById('name-input');
-  inp.value = myName || '';
-  myPartner = null;
-  partnerDropOpen = false;
-  renderLvlPicker();
-  renderPartnerSelector();
+  document.getElementById('name-input').value = myName || '';
+  myPartner = null; partnerDropOpen = false;
+  renderLvlPicker(); renderPartnerSelector();
   openModal('join-modal');
-  setTimeout(() => inp.focus(), 250);
+  setTimeout(() => document.getElementById('name-input').focus(), 250);
 }
 function hideJoinModal() { closeModal('join-modal'); }
 function submitJoin() {
-  const inp  = document.getElementById('name-input');
+  const inp = document.getElementById('name-input');
   const name = inp.value.trim();
   if (!name) { inp.focus(); return; }
   if (!myLevel) {
@@ -1111,97 +738,60 @@ function submitJoin() {
     document.getElementById('lvl-picker').style.borderRadius = '6px';
     return;
   }
-  myName = name;
-  localStorage.setItem('bmt_name', name);
+  myName = name; localStorage.setItem('bmt_name', name);
   socket.emit('join_queue', { name, level: myLevel, partner: myPartner || '' });
 }
 
-// ── Assign ────────────────────────────────────────────
-
+// ── Assign ─────────────────────────────────────────────
 function showAssignModal(name) {
   assigningPlayer = name;
   document.getElementById('assign-sub').textContent = `Assign court for ${name}`;
   const avail = IDS.filter(id => state.courts[id]?.players.length < 4);
   document.getElementById('assign-courts').innerHTML = avail.map(id => {
     const spots = 4 - state.courts[id].players.length;
-    return `<button class="court-opt" style="background:${courtColor(id)}" onclick="doAssign(${id})">
-      <span>Court ${id}</span>
-      <span class="court-opt-spots">${spots} spots left</span>
-    </button>`;
+    return `<button class="court-opt" style="background:${courtColor(id)}" onclick="doAssign(${id})"><span>Court ${id}</span><span class="court-opt-spots">${spots} spots left</span></button>`;
   }).join('');
   openModal('assign-modal');
 }
 function hideAssignModal() { closeModal('assign-modal'); assigningPlayer = null; promoteFromId = null; }
 
-// ── Promote on-deck to court ──────────────────────────
-
 let promoteFromId = null;
-
 function showPromoteModal(fromId) {
-  promoteFromId  = fromId;
-  assigningPlayer = null;
+  promoteFromId = fromId; assigningPlayer = null;
   const empty = IDS.filter(id => state.courts[id]?.players.length === 0 && !state.courts[id]?.playing);
-  document.getElementById('assign-sub').textContent =
-    `Select empty court for On-Deck ${INITIAL_IDS.indexOf(fromId) + 1}`;
+  document.getElementById('assign-sub').textContent = `Select empty court for On-Deck ${INITIAL_IDS.indexOf(fromId)+1}`;
   document.getElementById('assign-courts').innerHTML = empty.length
-    ? empty.map(id => `
-        <button class="court-opt" style="background:${courtColor(id)}" onclick="doPromote(${id})">
-          <span>Court ${id}</span>
-          <span class="court-opt-spots">Empty</span>
-        </button>`).join('')
+    ? empty.map(id => `<button class="court-opt" style="background:${courtColor(id)}" onclick="doPromote(${id})"><span>Court ${id}</span><span class="court-opt-spots">Empty</span></button>`).join('')
     : `<p style="text-align:center;color:var(--s400);padding:16px 0">No empty courts</p>`;
   openModal('assign-modal');
 }
+function doPromote(toCourtId) { if (!promoteFromId) return; socket.emit('promote_next', { fromCourtId:promoteFromId, toCourtId }); hideAssignModal(); }
+function doAssign(courtId)    { if (!assigningPlayer) return; socket.emit('assign_player', { courtId, name:assigningPlayer }); hideAssignModal(); }
 
-function doPromote(toCourtId) {
-  if (!promoteFromId) return;
-  socket.emit('promote_next', { fromCourtId: promoteFromId, toCourtId });
-  hideAssignModal();
-}
-function doAssign(courtId) {
-  if (!assigningPlayer) return;
-  socket.emit('assign_player', { courtId, name: assigningPlayer });
-  hideAssignModal();
-}
-
-// ── Manual Fill ───────────────────────────────────────
-
-let mfCourtId = null;
-let mfType = 'court';
-let mfSelected = new Set();
-let mfSpots = 0;
+// ── Manual Fill ────────────────────────────────────────
+let mfCourtId = null, mfType = 'court', mfSelected = new Set(), mfSpots = 0;
 
 function showMfModal(courtId, type = 'court') {
-  mfCourtId = courtId;
-  mfType = type;
-  mfSelected = new Set();
+  mfCourtId = courtId; mfType = type; mfSelected = new Set();
   const src = type === 'next' ? state.next[courtId] : state.courts[courtId];
   mfSpots = 4 - (src?.players.length || 0);
-  const label = type === 'next' ? `On Deck – Court ${courtId}` : `Pick Players – Court ${courtId}`;
-  document.getElementById('mf-title').textContent = label;
-  renderMfList();
-  openModal('mf-modal');
+  document.getElementById('mf-title').textContent = type === 'next' ? `On Deck – Court ${courtId}` : `Pick Players – Court ${courtId}`;
+  renderMfList(); openModal('mf-modal');
 }
 function hideMfModal() { closeModal('mf-modal'); }
 
 function toggleMf(name) {
-  if (mfSelected.has(name)) {
-    mfSelected.delete(name);
-  } else if (mfSelected.size < mfSpots) {
-    mfSelected.add(name);
-  }
+  if (mfSelected.has(name)) mfSelected.delete(name);
+  else if (mfSelected.size < mfSpots) mfSelected.add(name);
   renderMfList();
 }
 
 function renderMfList() {
   const remaining = mfSpots - mfSelected.size;
-  document.getElementById('mf-counter').innerHTML =
-    `Select <span>${remaining}</span> more player${remaining!==1?'s':''}`;
+  document.getElementById('mf-counter').innerHTML = `Select <span>${remaining}</span> more player${remaining!==1?'s':''}`;
   document.getElementById('mf-confirm').disabled = mfSelected.size === 0;
-
   document.getElementById('mf-list').innerHTML = state.queue.map(name => {
-    const sel = mfSelected.has(name);
-    const full = !sel && mfSelected.size >= mfSpots;
+    const sel = mfSelected.has(name); const full = !sel && mfSelected.size >= mfSpots;
     const partner = state.pairs?.[name];
     return `<div class="mf-item${sel?' sel':''}${full?' disabled':''}" onclick="${full?'':'toggleMf(\''+escJs(name)+'\')'}">
       <div class="mf-check">${sel?'✓':''}</div>
@@ -1214,118 +804,67 @@ function renderMfList() {
 
 function submitMf() {
   if (!mfCourtId || mfSelected.size === 0) return;
-  const event = mfType === 'next' ? 'manual_assign_next' : 'manual_assign';
-  socket.emit(event, { courtId: mfCourtId, names: [...mfSelected] });
+  socket.emit(mfType === 'next' ? 'manual_assign_next' : 'manual_assign', { courtId:mfCourtId, names:[...mfSelected] });
   hideMfModal();
 }
 
-// ── Admin PIN ─────────────────────────────────────────
+// ── Actions ────────────────────────────────────────────
+function undoDeck(courtId)       { socket.emit('undo_deck', courtId); }
+function undoCourtAction(courtId){ socket.emit('undo_court_action', courtId); }
+function addCourt()              { socket.emit('add_court'); }
+function removeCourt(courtId)    { socket.emit('remove_court', courtId); }
+function endGame(courtId,toQueue){ socket.emit('end_game', { courtId, toQueue }); }
+function removeFromCourt(courtId,name){ socket.emit('remove_from_court', { courtId, name }); }
+function removeFromQueue(name)   { socket.emit('remove_from_queue', name); if (name===myName){myName='';localStorage.removeItem('bmt_name');} }
+function removeFromNext(courtId,name) { socket.emit('remove_from_next', { courtId, name }); }
 
+// ── Admin PIN ──────────────────────────────────────────
 function onAdminBtnClick() {
-  if (isAdmin) {
-    isAdmin = false;
-    localStorage.removeItem('bmt_admin');
-    render();
-  } else {
-    openModal('pin-modal');
-    const inp = document.getElementById('pin-input');
-    inp.value = '';
-    document.getElementById('pin-error').style.display = 'none';
-    setTimeout(() => inp.focus(), 250);
-  }
+  if (isAdmin) { isAdmin=false; localStorage.removeItem('bmt_admin'); render(); }
+  else { openModal('pin-modal'); document.getElementById('pin-input').value=''; document.getElementById('pin-error').style.display='none'; setTimeout(()=>document.getElementById('pin-input').focus(),250); }
 }
 function hidePinModal() { closeModal('pin-modal'); }
 function submitPin() {
   const val = document.getElementById('pin-input').value;
-  if (val === ADMIN_PIN) {
-    isAdmin = true;
-    localStorage.setItem('bmt_admin', '1');
-    hidePinModal();
-    render();
-  } else {
-    document.getElementById('pin-error').style.display = 'block';
-    document.getElementById('pin-input').value = '';
-    document.getElementById('pin-input').focus();
-  }
+  if (val === ADMIN_PIN) { isAdmin=true; localStorage.setItem('bmt_admin','1'); hidePinModal(); render(); }
+  else { document.getElementById('pin-error').style.display='block'; document.getElementById('pin-input').value=''; document.getElementById('pin-input').focus(); }
 }
 
-// ── Modal helpers ─────────────────────────────────────
+// ── Edit Level Modal ───────────────────────────────────
+let editLvlName = null;
+function showLvlModal(name) { editLvlName=name; document.getElementById('lvl-modal-sub').textContent=`Change level for ${name}`; renderLvlModalPicker(); openModal('lvl-modal'); }
+function closeLvlModal() { closeModal('lvl-modal'); editLvlName=null; }
+function renderLvlModalPicker() {
+  const current = state.players[editLvlName] || '';
+  document.getElementById('lvl-modal-picker').innerHTML = LEVELS.map(l => {
+    const col = LEVEL_COLORS[l]; const sel = l === current;
+    return `<button class="lvl-btn${sel?' sel':''}" style="${sel?`background:${col};`:''}color:${sel?'white':col}" onclick="setPlayerLevel('${l}')">${l}</button>`;
+  }).join('');
+}
+function setPlayerLevel(level) { if (!editLvlName) return; socket.emit('set_player_level', { name:editLvlName, level }); closeLvlModal(); }
 
+// ── Modal helpers ──────────────────────────────────────
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// ── Utils ─────────────────────────────────────────────
-
-// ── QR Code ───────────────────────────────────────────
-
+// ── QR ─────────────────────────────────────────────────
 let qrGenerated = false;
 function showQrModal() {
   openModal('qr-modal');
   if (!qrGenerated) {
-    new QRCode(document.getElementById('qr-canvas'), {
-      text: 'https://n1-badminton.onrender.com/',
-      width: 200, height: 200,
-      colorDark: '#14532d', colorLight: '#ffffff',
-    });
+    new QRCode(document.getElementById('qr-canvas'), { text:'https://n1-badminton.onrender.com/', width:200, height:200, colorDark:'#14532d', colorLight:'#ffffff' });
     qrGenerated = true;
   }
 }
 
+// ── Utils ──────────────────────────────────────────────
 function esc(s)   { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escJs(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function showNameError(msg) { const el=document.getElementById('name-error'); el.textContent=msg; el.style.display='block'; document.getElementById('name-input').style.borderColor='#ef4444'; document.getElementById('name-input').focus(); }
+function clearNameError()   { document.getElementById('name-error').style.display='none'; document.getElementById('name-input').style.borderColor=''; }
 
-// ── Name error helpers ────────────────────────────────
-
-function showNameError(msg) {
-  const el = document.getElementById('name-error');
-  el.textContent = msg;
-  el.style.display = 'block';
-  const inp = document.getElementById('name-input');
-  inp.style.borderColor = '#ef4444';
-  inp.focus();
-}
-function clearNameError() {
-  const el = document.getElementById('name-error');
-  el.style.display = 'none';
-  document.getElementById('name-input').style.borderColor = '';
-}
-
-socket.on('join_success', () => { hideJoinModal(); });
-
-socket.on('join_error', ({ reason, name }) => {
-  if (reason === 'name_taken') {
-    showNameError(`"${name}" is already in the queue or on a court. Please use a different name.`);
-  }
-});
-
-// ── Admin: edit player level ──────────────────────────
-
-let editLvlName = null;
-
-function showLvlModal(name) {
-  editLvlName = name;
-  document.getElementById('lvl-modal-sub').textContent = `修改 ${name} 的等级`;
-  renderLvlModalPicker();
-  openModal('lvl-modal');
-}
-function closeLvlModal() { closeModal('lvl-modal'); editLvlName = null; }
-
-function renderLvlModalPicker() {
-  const current = state.players[editLvlName] || '';
-  document.getElementById('lvl-modal-picker').innerHTML = LEVELS.map(l => {
-    const col = LEVEL_COLORS[l];
-    const sel = l === current;
-    return `<button class="lvl-btn${sel?' sel':''}"
-      style="${sel?`background:${col};`:''}color:${sel?'white':col}"
-      onclick="setPlayerLevel('${l}')">${l}</button>`;
-  }).join('');
-}
-
-function setPlayerLevel(level) {
-  if (!editLvlName) return;
-  socket.emit('set_player_level', { name: editLvlName, level });
-  closeLvlModal();
-}
+socket.on('join_success', () => hideJoinModal());
+socket.on('join_error', ({ reason, name }) => { if (reason==='name_taken') showNameError(`"${name}" is already in use. Please use a different name.`); });
 </script>
 </body>
 </html>

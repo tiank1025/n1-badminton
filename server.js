@@ -20,6 +20,7 @@ const state = {
   queue:   [],
   players: {},
   pairs:   {},
+  history: [],
 };
 
 let connectedCount = 0;
@@ -312,12 +313,15 @@ io.on('connection', (socket) => {
     if (!court) return;
     if (court.players.length > 0) {
       courtUndoSnapshots[courtId] = { type: 'end_game', players: [...court.players], wasPlaying: court.playing };
+      state.history.unshift({ time: Date.now(), courtId, players: [...court.players] });
+      if (state.history.length > 100) state.history.pop();
     }
     if (toQueue) state.queue.push(...court.players);
     court.players = [];
     court.playing = false;
     broadcast();
   });
+
 
   socket.on('undo_court_action', (courtId) => {
     courtId = Number(courtId);
