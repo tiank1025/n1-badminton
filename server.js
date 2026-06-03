@@ -82,6 +82,14 @@ function findPlayer(name) {
   return null;
 }
 
+// Get the backing players array for a located player.
+function arrForLoc(loc) {
+  if (loc.type === 'queue') return state.queue;
+  if (loc.type === 'court') return state.courts[loc.id].players;
+  if (loc.type === 'next')  return state.next[loc.id].players;
+  return null;
+}
+
 function smartFillInto(targetPlayers) {
   const needed = 4 - targetPlayers.length;
   if (needed <= 0 || state.queue.length === 0) return;
@@ -341,6 +349,26 @@ io.on('connection', (socket) => {
       state.queue.push(name);
     }
 
+    broadcast();
+  });
+
+  // Swap two players' positions (admin drag one player onto another).
+  socket.on('swap_players', ({ a, b }) => {
+    if (!socket.isAdmin) return;
+    a = sanitize(a); b = sanitize(b);
+    if (!a || !b || a === b) return;
+    const la = findPlayer(a), lb = findPlayer(b);
+    if (!la || !lb) return;
+    const arrA = arrForLoc(la), arrB = arrForLoc(lb);
+    if (!arrA || !arrB) return;
+    const ia = arrA.indexOf(a), ib = arrB.indexOf(b);
+    if (ia < 0 || ib < 0) return;
+    arrA[ia] = b; arrB[ib] = a; // works in-place whether same array or not
+    // a court that loses/keeps 4 players is unaffected; just clear stale undo snapshots
+    [la, lb].forEach(loc => {
+      if (loc.type === 'court') delete courtUndoSnapshots[loc.id];
+      if (loc.type === 'next')  delete undoSnapshots[loc.id];
+    });
     broadcast();
   });
 

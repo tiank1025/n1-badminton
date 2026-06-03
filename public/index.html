@@ -127,6 +127,8 @@
     .court-card.drag-over { box-shadow:0 0 0 3px var(--g500),0 10px 28px rgba(22,163,74,0.38); transform:translateY(-2px); }
     .court-card.next-card.drag-over { border-style:solid; border-color:var(--g500); opacity:1; }
     .q-card.drag-over { box-shadow:0 0 0 3px var(--g500),0 10px 28px rgba(22,163,74,0.30); }
+    .p-cell.cell-drop { background:var(--g100); box-shadow:0 0 0 2px var(--g500) inset; }
+    .p-cell.cell-drop .p-name { color:var(--g800); }
 
     .court-head { padding:13px 15px; display:flex; align-items:center; justify-content:space-between; position:relative; overflow:hidden; }
     .court-head::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,0.14) 0%,transparent 60%); pointer-events:none; }
@@ -582,7 +584,7 @@ function buildNextCourt(id, slot) {
     const p = c.players[i];
     if (p) {
       const me = p === myName;
-      return `<div class="p-cell filled${me?' me':''}"${isAdmin ? ` draggable="true" ondragstart="onDragStart(event,'${escJs(p)}')" ondragend="onDragEnd(event)"` : ''}>
+      return `<div class="p-cell filled${me?' me':''}"${isAdmin ? ` draggable="true" ondragstart="onDragStart(event,'${escJs(p)}')" ondragend="onDragEnd(event)" ondragover="onDragOverCell(event)" ondragleave="onDragLeave(event)" ondrop="onDropCell(event,'${escJs(p)}')"` : ''}>
         <span class="p-name${me?' me':''}" style="max-width:52px" title="${esc(p)}">${esc(p)}</span>
         ${lvlBadge(p, isAdmin)}
         ${isAdmin ? `<button class="p-rm" onclick="removeFromNext(${id},'${escJs(p)}')">×</button>` : ''}
@@ -633,7 +635,7 @@ function buildCourt(id) {
     const p = c.players[i];
     if (p) {
       const me = p === myName;
-      return `<div class="p-cell filled${me?' me':''}"${isAdmin ? ` draggable="true" ondragstart="onDragStart(event,'${escJs(p)}')" ondragend="onDragEnd(event)"` : ''}>
+      return `<div class="p-cell filled${me?' me':''}"${isAdmin ? ` draggable="true" ondragstart="onDragStart(event,'${escJs(p)}')" ondragend="onDragEnd(event)" ondragover="onDragOverCell(event)" ondragleave="onDragLeave(event)" ondrop="onDropCell(event,'${escJs(p)}')"` : ''}>
         <span class="p-name${me?' me':''}" style="max-width:52px" title="${esc(p)}">${esc(p)}</span>
         ${lvlBadge(p, isAdmin)}
         ${isAdmin ? `<button class="p-rm" onclick="removeFromCourt(${id},'${escJs(p)}')">×</button>` : ''}
@@ -892,7 +894,11 @@ function onDragStart(e, name) {
 function onDragEnd(e) {
   draggedName = null;
   e.currentTarget.classList.remove('dragging');
+  clearDragHighlights();
+}
+function clearDragHighlights() {
   document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  document.querySelectorAll('.cell-drop').forEach(el => el.classList.remove('cell-drop'));
 }
 function onDragOver(e) {
   if (!isAdmin || !draggedName) return;
@@ -900,9 +906,31 @@ function onDragOver(e) {
   e.dataTransfer.dropEffect = 'move';
   e.currentTarget.classList.add('drag-over');
 }
+// Dragging onto an occupied player cell -> swap the two players.
+function onDragOverCell(e) {
+  if (!isAdmin || !draggedName) return;
+  e.preventDefault();
+  e.stopPropagation();             // don't trigger the card-level "move" target
+  e.dataTransfer.dropEffect = 'move';
+  const card = e.currentTarget.closest('.court-card');
+  if (card) card.classList.remove('drag-over');
+  e.currentTarget.classList.add('cell-drop');
+}
+function onDropCell(e, targetName) {
+  if (!isAdmin || !draggedName) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const a = draggedName;
+  if (a && targetName && a !== targetName) socket.emit('swap_players', { a, b: targetName });
+  draggedName = null;
+  clearDragHighlights();
+}
 function onDragLeave(e) {
-  // ignore bubbling from child elements; only clear when truly leaving the card
-  if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-over');
+  // ignore bubbling from child elements; only clear when truly leaving the element
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drag-over');
+    e.currentTarget.classList.remove('cell-drop');
+  }
 }
 function onDropCourt(e, courtId) {
   e.preventDefault();
