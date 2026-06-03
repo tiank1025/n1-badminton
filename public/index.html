@@ -120,6 +120,14 @@
     .next-card { border:2px dashed var(--s200); box-shadow:none; opacity:0.9; }
     .next-card .court-head { opacity:0.8; }
 
+    /* ── Drag & drop (admin) ── */
+    .q-item[draggable="true"], .p-cell[draggable="true"] { cursor:grab; }
+    .q-item[draggable="true"]:active, .p-cell[draggable="true"]:active { cursor:grabbing; }
+    .q-item.dragging, .p-cell.dragging { opacity:0.4; }
+    .court-card.drag-over { box-shadow:0 0 0 3px var(--g500),0 10px 28px rgba(22,163,74,0.38); transform:translateY(-2px); }
+    .court-card.next-card.drag-over { border-style:solid; border-color:var(--g500); opacity:1; }
+    .q-card.drag-over { box-shadow:0 0 0 3px var(--g500),0 10px 28px rgba(22,163,74,0.30); }
+
     .court-head { padding:13px 15px; display:flex; align-items:center; justify-content:space-between; position:relative; overflow:hidden; }
     .court-head::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,0.14) 0%,transparent 60%); pointer-events:none; }
     .court-name { font-size:14px; font-weight:900; color:white; letter-spacing:-0.2px; }
@@ -347,7 +355,7 @@
   <div class="courts-grid" id="next-grid"></div>
 
   <div class="sec-label" style="margin-top:10px">Waiting Queue</div>
-  <div class="q-card" id="q-card">
+  <div class="q-card" id="q-card" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropQueue(event)">
     <div class="q-head">
       <div class="q-title-row">
         <span class="q-title">Waiting</span>
@@ -513,7 +521,7 @@ function renderHowto() {
       <span class="howto-step">① Fill On Deck</span><span class="howto-arrow">→</span>
       <span class="howto-step">② Send to court when full</span><span class="howto-arrow">→</span>
       <span class="howto-step">③ End & Re-queue when done</span>
-      <div style="margin-top:6px;font-size:11px;color:var(--g700);width:100%">💡 Drag player names between queue, On Deck and courts</div>`;
+      <div style="margin-top:6px;font-size:11px;color:var(--g700);width:100%">💡 Drag any player between the waitlist, On Deck and courts to move them (desktop)</div>`;
   } else {
     document.getElementById('howto-title').textContent = 'How to Play';
     document.getElementById('howto-steps').innerHTML = `
@@ -562,7 +570,7 @@ function buildNextCourt(id, slot) {
     const p = c.players[i];
     if (p) {
       const me = p === myName;
-      return `<div class="p-cell filled${me?' me':''}">
+      return `<div class="p-cell filled${me?' me':''}"${isAdmin ? ` draggable="true" ondragstart="onDragStart(event,'${escJs(p)}')" ondragend="onDragEnd(event)"` : ''}>
         <span class="p-name${me?' me':''}" style="max-width:52px" title="${esc(p)}">${esc(p)}</span>
         ${lvlBadge(p, isAdmin)}
         ${isAdmin ? `<button class="p-rm" onclick="removeFromNext(${id},'${escJs(p)}')">×</button>` : ''}
@@ -588,8 +596,9 @@ function buildNextCourt(id, slot) {
     actions = `<button class="c-btn dim" disabled>${count === 0 ? 'On Deck' : `${count}/4`}</button>`;
   }
 
+  const dropAttrs = (isAdmin && count < 4) ? ` ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropNext(event,${id})"` : '';
   return `
-    <div class="court-card next-card">
+    <div class="court-card next-card"${dropAttrs}>
       <div class="court-head" style="background:${col}">
         <span class="court-name">On Deck ${slot}</span>
         <span class="court-badge">⏳ Next</span>
@@ -612,7 +621,7 @@ function buildCourt(id) {
     const p = c.players[i];
     if (p) {
       const me = p === myName;
-      return `<div class="p-cell filled${me?' me':''}">
+      return `<div class="p-cell filled${me?' me':''}"${isAdmin ? ` draggable="true" ondragstart="onDragStart(event,'${escJs(p)}')" ondragend="onDragEnd(event)"` : ''}>
         <span class="p-name${me?' me':''}" style="max-width:52px" title="${esc(p)}">${esc(p)}</span>
         ${lvlBadge(p, isAdmin)}
         ${isAdmin ? `<button class="p-rm" onclick="removeFromCourt(${id},'${escJs(p)}')">×</button>` : ''}
@@ -637,8 +646,9 @@ function buildCourt(id) {
   }
 
   const canRemove = isAdmin && !c.playing && count === 0 && (state.next[id]?.players.length ?? 0) === 0;
+  const dropAttrs = (isAdmin && count < 4) ? ` ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropCourt(event,${id})"` : '';
   return `
-    <div class="court-card${(c.playing||full)?' live':''}">
+    <div class="court-card${(c.playing||full)?' live':''}"${dropAttrs}>
       <div class="court-head" style="background:${col}">
         <span class="court-name">Court ${id}</span>
         <span class="court-badge ${statusClass}">${statusLabel}</span>
@@ -661,7 +671,8 @@ function renderQueue() {
   list.innerHTML = `<div class="q-list">` + state.queue.map((name, i) => {
     const me = name === myName;
     const partner = state.pairs?.[name];
-    return `<div class="q-item${me?' me':''}">
+    const dragAttrs = isAdmin ? ` draggable="true" ondragstart="onDragStart(event,'${escJs(name)}')" ondragend="onDragEnd(event)"` : '';
+    return `<div class="q-item${me?' me':''}"${dragAttrs}>
       <span class="q-pos${i<4?' next':''}">${i+1}</span>
       <span class="q-name${me?' me':''}" title="${esc(name)}">${esc(name)}${me?' ★':''}</span>
       ${lvlBadge(name, isAdmin)}
@@ -856,6 +867,53 @@ function endGame(courtId,toQueue){ socket.emit('end_game', { courtId, toQueue })
 function removeFromCourt(courtId,name){ socket.emit('remove_from_court', { courtId, name }); }
 function removeFromQueue(name)   { socket.emit('remove_from_queue', name); if (name===myName){myName='';localStorage.removeItem('bmt_name');} }
 function removeFromNext(courtId,name) { socket.emit('remove_from_next', { courtId, name }); }
+
+// ── Drag & drop: waitlist → court / On Deck (admin only) ──
+let draggedName = null;
+function onDragStart(e, name) {
+  if (!isAdmin) return;
+  draggedName = name;
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', name); } catch (_) {}
+  e.currentTarget.classList.add('dragging');
+}
+function onDragEnd(e) {
+  draggedName = null;
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+function onDragOver(e) {
+  if (!isAdmin || !draggedName) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+function onDragLeave(e) {
+  // ignore bubbling from child elements; only clear when truly leaving the card
+  if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-over');
+}
+function onDropCourt(e, courtId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const name = draggedName || e.dataTransfer.getData('text/plain');
+  if (name) socket.emit('move_player', { name, toType: 'court', toId: courtId });
+  draggedName = null;
+}
+function onDropNext(e, courtId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const name = draggedName || e.dataTransfer.getData('text/plain');
+  if (name) socket.emit('move_player', { name, toType: 'next', toId: courtId });
+  draggedName = null;
+}
+function onDropQueue(e) {
+  if (!isAdmin || !draggedName) return; // only react to an in-app player drag
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const name = draggedName || e.dataTransfer.getData('text/plain');
+  if (name) socket.emit('move_player', { name, toType: 'queue' });
+  draggedName = null;
+}
 
 // ── Admin PIN ──────────────────────────────────────────
 function onAdminBtnClick() {

@@ -70,6 +70,18 @@ function cleanupPair(name) {
   }
 }
 
+// Locate a player across queue / courts / on-deck. Returns null if not found.
+function findPlayer(name) {
+  if (state.queue.includes(name)) return { type: 'queue' };
+  for (const id of state.courtIds) {
+    if (state.courts[id] && state.courts[id].players.includes(name)) return { type: 'court', id };
+  }
+  for (const id of INITIAL_COURT_IDS) {
+    if (state.next[id] && state.next[id].players.includes(name)) return { type: 'next', id };
+  }
+  return null;
+}
+
 function smartFillInto(targetPlayers) {
   const needed = 4 - targetPlayers.length;
   if (needed <= 0 || state.queue.length === 0) return;
@@ -273,6 +285,62 @@ io.on('connection', (socket) => {
     state.queue = state.queue.filter(n => n !== name);
     cleanupPair(name);
     court.players.push(name);
+    broadcast();
+  });
+
+  // Atomically move a player between queue / court / on-deck (admin drag-and-drop).
+  socket.on('move_player', ({ name, toType, toId }) => {
+    if (!socket.isAdmin) return;
+    name = sanitize(name);
+    if (!name) return;
+    toId = (toId === undefined || toId === null) ? null : Number(toId);
+
+    const from = findPlayer(name);
+    if (!from) return; // unknown / stale player
+
+    // Validate destination + capacity (and ignore no-op moves to same slot)
+    if (toType === 'court') {
+      const dest = state.courts[toId];
+      if (!dest) return;
+      if (from.type === 'court' && from.id === toId) return;
+      if (dest.players.length >= 4) return;
+    } else if (toType === 'next') {
+      const dest = state.next[toId];
+      if (!dest) return;
+      if (from.type === 'next' && from.id === toId) return;
+      if (dest.players.length >= 4) return;
+    } else if (toType === 'queue') {
+      if (from.type === 'queue') return;
+    } else {
+      return;
+    }
+
+    // Remove from source
+    if (from.type === 'queue') {
+      state.queue = state.queue.filter(n => n !== name);
+    } else if (from.type === 'court') {
+      const c = state.courts[from.id];
+      c.players = c.players.filter(n => n !== name);
+      if (c.players.length < 4) c.playing = false;
+      delete courtUndoSnapshots[from.id];
+    } else if (from.type === 'next') {
+      state.next[from.id].players = state.next[from.id].players.filter(n => n !== name);
+      delete undoSnapshots[from.id];
+    }
+
+    // Add to destination
+    if (toType === 'court') {
+      cleanupPair(name);
+      state.courts[toId].players.push(name);
+      delete courtUndoSnapshots[toId];
+    } else if (toType === 'next') {
+      cleanupPair(name);
+      state.next[toId].players.push(name);
+      delete undoSnapshots[toId];
+    } else if (toType === 'queue') {
+      state.queue.push(name);
+    }
+
     broadcast();
   });
 
