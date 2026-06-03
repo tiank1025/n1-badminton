@@ -12,6 +12,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const INITIAL_COURT_IDS = [6, 7, 8, 9, 10];
 const EXTRA_COURT_IDS   = [1, 2, 3, 4, 5]; // venue courts available as extras
 const LEVELS = ['advanced', 'intermediate', 'novice', 'beginner'];
+const ADMIN_PIN = String(process.env.ADMIN_PIN || '1234');
 
 const state = {
   courtIds: [...INITIAL_COURT_IDS],
@@ -27,10 +28,14 @@ let connectedCount = 0;
 const undoSnapshots = {};
 const courtUndoSnapshots = {}; // courtId -> { type: 'end_game'|'promote', players, wasPlaying }
 
-function broadcast() {
+function stateWithUndo() {
   const canUndo = Object.fromEntries(INITIAL_COURT_IDS.map(id => [id, !!undoSnapshots[id]]));
   const canUndoCourt = Object.fromEntries(state.courtIds.map(id => [id, !!courtUndoSnapshots[id]]));
-  io.emit('state_update', { ...state, canUndo, canUndoCourt });
+  return { ...state, canUndo, canUndoCourt };
+}
+
+function broadcast() {
+  io.emit('state_update', stateWithUndo());
 }
 
 function sanitize(name) {
@@ -117,12 +122,25 @@ function smartFillInto(targetPlayers) {
 io.on('connection', (socket) => {
   connectedCount++;
   io.emit('connected_count', connectedCount);
-  socket.emit('state_update', state);
+  socket.isAdmin = false;
+  socket.emit('state_update', stateWithUndo());
 
   socket.on('disconnect', () => {
     connectedCount--;
     io.emit('connected_count', connectedCount);
   });
+
+  socket.on('admin_login', (pin) => {
+    if (String(pin) === ADMIN_PIN) {
+      socket.isAdmin = true;
+      socket.emit('admin_result', { ok: true });
+    } else {
+      socket.isAdmin = false;
+      socket.emit('admin_result', { ok: false });
+    }
+  });
+
+  socket.on('admin_logout', () => { socket.isAdmin = false; });
 
   socket.on('join_queue', ({ name, level, partner }) => {
     name = sanitize(name);
@@ -156,6 +174,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('unlink_pair', (name) => {
+    if (!socket.isAdmin) return;
     name = sanitize(name);
     const partner = state.pairs[name];
     if (partner) {
@@ -166,6 +185,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('add_court', () => {
+    if (!socket.isAdmin) return;
     const allIds = [...EXTRA_COURT_IDS, ...INITIAL_COURT_IDS].sort((a, b) => a - b);
     const nextId = allIds.find(id => !state.courtIds.includes(id));
     if (nextId === undefined) return; // all courts already active
@@ -176,6 +196,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('remove_court', (courtId) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     if (!state.courtIds.includes(courtId)) return;
     const court = state.courts[courtId];
@@ -188,12 +209,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('fill_court', (courtId) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     const court = state.courts[courtId];
     if (court) { delete courtUndoSnapshots[courtId]; smartFillInto(court.players); broadcast(); }
   });
 
   socket.on('fill_next', (courtId) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     const next = state.next[courtId];
     if (!next) return;
@@ -205,6 +228,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('manual_assign', ({ courtId, names }) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     const court = state.courts[courtId];
     if (!court) return;
@@ -222,6 +246,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('manual_assign_next', ({ courtId, names }) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     const next = state.next[courtId];
     if (!next) return;
@@ -239,6 +264,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('assign_player', ({ courtId, name }) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     name = sanitize(name);
     const court = state.courts[courtId];
@@ -251,6 +277,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('remove_from_court', ({ courtId, name }) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     name = sanitize(name);
     const court = state.courts[courtId];
@@ -262,6 +289,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('remove_from_next', ({ courtId, name }) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     name = sanitize(name);
     const next = state.next[courtId];
@@ -277,6 +305,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('promote_next', ({ fromCourtId, toCourtId }) => {
+    if (!socket.isAdmin) return;
     fromCourtId = Number(fromCourtId);
     toCourtId   = Number(toCourtId);
     const next  = state.next[fromCourtId];
@@ -291,6 +320,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('undo_deck', (courtId) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     const added = undoSnapshots[courtId];
     if (!added) return;
@@ -302,12 +332,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('start_game', (courtId) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     const court = state.courts[courtId];
     if (court && court.players.length === 4) { delete courtUndoSnapshots[courtId]; court.playing = true; broadcast(); }
   });
 
   socket.on('end_game', ({ courtId, toQueue }) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     const court = state.courts[courtId];
     if (!court) return;
@@ -324,6 +356,7 @@ io.on('connection', (socket) => {
 
 
   socket.on('undo_court_action', (courtId) => {
+    if (!socket.isAdmin) return;
     courtId = Number(courtId);
     const snap = courtUndoSnapshots[courtId];
     if (!snap) return;
@@ -350,6 +383,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('set_player_level', ({ name, level }) => {
+    if (!socket.isAdmin) return;
     name = sanitize(name);
     if (!name || !LEVELS.includes(level)) return;
     if (state.players[name] === undefined) return;

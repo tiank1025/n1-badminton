@@ -465,16 +465,30 @@ const LEVEL_COLORS = {
   'beginner'    : '#f59e0b',
 };
 
-const ADMIN_PIN = '1234';
-
 let state = { courts:{}, next:{}, queue:[], players:{}, history:[] };
 let myName  = localStorage.getItem('bmt_name')  || '';
 let myLevel = localStorage.getItem('bmt_level') || '';
-let isAdmin = localStorage.getItem('bmt_admin') === '1';
+let adminPin = localStorage.getItem('bmt_admin_pin') || '';
+let isAdmin = !!adminPin; // optimistic; server re-confirms on connect
 let assigningPlayer = null;
 
 socket.on('state_update', s => { state = s; if (s.courtIds) IDS = s.courtIds; render(); });
 socket.on('connected_count', n => { document.getElementById('online-count').textContent = n; });
+
+// Re-authenticate admin on every (re)connect — server admin flag is per-socket.
+socket.on('connect', () => { if (adminPin) socket.emit('admin_login', adminPin); });
+socket.on('admin_result', ({ ok }) => {
+  if (ok) {
+    isAdmin = true;
+    document.getElementById('pin-error').style.display = 'none';
+    hidePinModal();
+  } else {
+    isAdmin = false; adminPin = ''; localStorage.removeItem('bmt_admin_pin');
+    document.getElementById('pin-error').style.display = 'block';
+    const inp = document.getElementById('pin-input'); if (inp) inp.value = '';
+  }
+  render();
+});
 
 // ── Render ─────────────────────────────────────────────
 function render() {
@@ -532,7 +546,7 @@ function renderCourts() {
 
 function renderNext() {
   const staged = INITIAL_IDS.filter(id => state.next[id]?.players.length > 0);
-  let chips = staged.map(id => `<span class="sec-chip">⏳ #${IDS.indexOf(id)+1}: ${state.next[id].players.length}/4</span>`).join('');
+  let chips = staged.map(id => `<span class="sec-chip">⏳ #${INITIAL_IDS.indexOf(id)+1}: ${state.next[id].players.length}/4</span>`).join('');
   document.getElementById('next-summary').innerHTML = chips;
   document.getElementById('next-grid').innerHTML = INITIAL_IDS.map((id,i) => buildNextCourt(id, i+1)).join('');
 }
@@ -668,7 +682,7 @@ function renderMyStatus() {
   const onDeck  = IDS.find(id => state.next[id]?.players.includes(myName));
   const qPos    = state.queue.indexOf(myName);
   if (onCourt)     el.innerHTML = `<span style="color:#86efac;font-size:12px">✓ Court ${onCourt}</span>`;
-  else if (onDeck) el.innerHTML = `<span style="color:#fdba74;font-size:12px">⏳ On Deck ${IDS.indexOf(onDeck)+1}</span>`;
+  else if (onDeck) el.innerHTML = `<span style="color:#fdba74;font-size:12px">⏳ On Deck ${INITIAL_IDS.indexOf(onDeck)+1}</span>`;
   else if (qPos>=0)el.innerHTML = `<span style="color:#fde68a;font-size:12px">Queue #${qPos+1}</span>`;
   else             el.innerHTML = `<span style="color:rgba(255,255,255,0.5);font-size:12px">${esc(myName)}</span>`;
 }
@@ -845,14 +859,15 @@ function removeFromNext(courtId,name) { socket.emit('remove_from_next', { courtI
 
 // ── Admin PIN ──────────────────────────────────────────
 function onAdminBtnClick() {
-  if (isAdmin) { isAdmin=false; localStorage.removeItem('bmt_admin'); render(); }
+  if (isAdmin) { isAdmin=false; adminPin=''; localStorage.removeItem('bmt_admin_pin'); socket.emit('admin_logout'); render(); }
   else { openModal('pin-modal'); document.getElementById('pin-input').value=''; document.getElementById('pin-error').style.display='none'; setTimeout(()=>document.getElementById('pin-input').focus(),250); }
 }
 function hidePinModal() { closeModal('pin-modal'); }
 function submitPin() {
   const val = document.getElementById('pin-input').value;
-  if (val === ADMIN_PIN) { isAdmin=true; localStorage.setItem('bmt_admin','1'); hidePinModal(); render(); }
-  else { document.getElementById('pin-error').style.display='block'; document.getElementById('pin-input').value=''; document.getElementById('pin-input').focus(); }
+  if (!val) { document.getElementById('pin-input').focus(); return; }
+  adminPin = val; localStorage.setItem('bmt_admin_pin', val);
+  socket.emit('admin_login', val); // result handled by 'admin_result'
 }
 
 // ── Edit Level Modal ───────────────────────────────────
