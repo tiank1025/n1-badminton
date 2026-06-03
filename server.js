@@ -450,6 +450,20 @@ io.on('connection', (socket) => {
     broadcast();
   });
 
+  socket.on('reset_all', () => {
+    if (!socket.isAdmin) return;
+    state.courtIds = [...INITIAL_COURT_IDS];
+    state.courts = Object.fromEntries(INITIAL_COURT_IDS.map(id => [id, { players: [], playing: false }]));
+    state.next   = Object.fromEntries(INITIAL_COURT_IDS.map(id => [id, { players: [] }]));
+    state.queue   = [];
+    state.players = {};
+    state.pairs   = {};
+    state.history = [];
+    Object.keys(undoSnapshots).forEach(k => delete undoSnapshots[k]);
+    Object.keys(courtUndoSnapshots).forEach(k => delete courtUndoSnapshots[k]);
+    broadcast();
+  });
+
   socket.on('set_player_level', ({ name, level }) => {
     if (!socket.isAdmin) return;
     name = sanitize(name);

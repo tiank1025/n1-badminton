@@ -223,6 +223,7 @@
     .m-btn:active { transform:scale(0.97); }
     .m-btn.cancel { background:var(--s100); color:var(--s600); }
     .m-btn.ok { background:linear-gradient(135deg,var(--g500),var(--g600)); color:white; box-shadow:0 3px 10px rgba(22,163,74,0.3); }
+    .m-btn.danger { background:linear-gradient(135deg,#ef4444,#dc2626); color:white; box-shadow:0 3px 10px rgba(220,38,38,0.3); }
     .court-opt { width:100%; border:none; cursor:pointer; border-radius:12px; padding:13px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-family:inherit; font-size:14px; font-weight:700; color:white; transition:opacity 0.15s,transform 0.1s; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
     .court-opt:hover { opacity:0.9; transform:translateY(-1px); }
     .court-opt:active { transform:scale(0.98); }
@@ -270,6 +271,8 @@
     .admin-btn { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); color:white; cursor:pointer; border-radius:8px; padding:4px 10px; font-size:12px; font-weight:700; font-family:inherit; margin-top:0; transition:background 0.15s; }
     .admin-btn:hover { background:rgba(255,255,255,0.22); }
     .admin-btn.unlocked { background:rgba(253,230,138,0.18); border-color:rgba(253,230,138,0.4); color:#fde68a; }
+    .admin-btn.danger { background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.45); color:#fecaca; }
+    .admin-btn.danger:hover { background:rgba(239,68,68,0.32); }
 
     /* ── History sidebar content ── */
     .history-sidebar-title {
@@ -324,6 +327,7 @@
       <div id="my-status"></div>
       <div class="hd-btn-row">
         <button class="admin-btn" onclick="showQrModal()">📷 QR</button>
+        <button class="admin-btn danger" id="reset-btn" onclick="showResetModal()" style="display:none">🗑 Reset</button>
         <button class="admin-btn" id="admin-btn" onclick="onAdminBtnClick()">🔒 Admin</button>
       </div>
     </div>
@@ -442,6 +446,19 @@
   </div>
 </div>
 
+<!-- Reset Confirm Modal -->
+<div class="overlay" id="reset-modal" onclick="if(event.target===this)closeModal('reset-modal')">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title">Clear all data?</div>
+    <div class="m-sub">This removes everyone from the waitlist, On Deck and all courts, clears game history, and resets courts to 6–10. This cannot be undone.</div>
+    <div class="m-row">
+      <button class="m-btn cancel" onclick="closeModal('reset-modal')">Cancel</button>
+      <button class="m-btn danger" onclick="confirmReset()">Clear everything</button>
+    </div>
+  </div>
+</div>
+
 <!-- PIN Modal -->
 <div class="overlay" id="pin-modal" onclick="if(event.target===this)hidePinModal()">
   <div class="modal">
@@ -509,27 +526,22 @@ function renderAdminBtn() {
   if (isAdmin) { btn.textContent = '🔓 Admin'; btn.classList.add('unlocked'); }
   else         { btn.textContent = '🔒 Admin'; btn.classList.remove('unlocked'); }
   document.getElementById('history-sidebar').classList.toggle('visible', isAdmin);
+  document.getElementById('reset-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('main-join-btn').style.display = isAdmin ? 'none' : '';
   document.querySelector('main').classList.toggle('admin-mode', isAdmin);
   document.querySelector('.page-wrap').classList.toggle('admin-layout', isAdmin);
 }
 
 function renderHowto() {
-  if (isAdmin) {
-    document.getElementById('howto-title').textContent = 'Admin Flow';
-    document.getElementById('howto-steps').innerHTML = `
-      <span class="howto-step">① Fill On Deck</span><span class="howto-arrow">→</span>
-      <span class="howto-step">② Send to court when full</span><span class="howto-arrow">→</span>
-      <span class="howto-step">③ End & Re-queue when done</span>
-      <div style="margin-top:6px;font-size:11px;color:var(--g700);width:100%">💡 Drag any player between the waitlist, On Deck and courts to move them (desktop)</div>`;
-  } else {
-    document.getElementById('howto-title').textContent = 'How to Play';
-    document.getElementById('howto-steps').innerHTML = `
-      <span class="howto-step">① Tap "+ Join Queue"</span><span class="howto-arrow">→</span>
-      <span class="howto-step">② Watch for your name in On Deck</span><span class="howto-arrow">→</span>
-      <span class="howto-step">③ Head to your court</span><span class="howto-arrow">→</span>
-      <span class="howto-step">④ Re-join after game</span>`;
-  }
+  const box = document.getElementById('howto');
+  if (isAdmin) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  document.getElementById('howto-title').textContent = 'How to Play';
+  document.getElementById('howto-steps').innerHTML = `
+    <span class="howto-step">① Tap "+ Join Queue"</span><span class="howto-arrow">→</span>
+    <span class="howto-step">② Watch for your name in On Deck</span><span class="howto-arrow">→</span>
+    <span class="howto-step">③ Head to your court</span><span class="howto-arrow">→</span>
+    <span class="howto-step">④ Re-join after game</span>`;
 }
 
 function renderSummary() {
@@ -927,6 +939,10 @@ function submitPin() {
   adminPin = val; localStorage.setItem('bmt_admin_pin', val);
   socket.emit('admin_login', val); // result handled by 'admin_result'
 }
+
+// ── Reset all data (admin) ─────────────────────────────
+function showResetModal() { if (isAdmin) openModal('reset-modal'); }
+function confirmReset()    { socket.emit('reset_all'); closeModal('reset-modal'); }
 
 // ── Edit Level Modal ───────────────────────────────────
 let editLvlName = null;
