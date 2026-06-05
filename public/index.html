@@ -353,7 +353,7 @@
     </div>
   </div>
   <div class="join-sticky" id="join-sticky">
-    <button class="main-join-btn" id="main-join-btn" onclick="showJoinModal()">+ Join Queue</button>
+    <button class="main-join-btn" id="main-join-btn" onclick="showJoinModal()">Join Queue</button>
   </div>
 
   <div class="sec-label">
@@ -376,7 +376,6 @@
         <span class="q-title">Waiting</span>
         <span class="q-badge" id="q-badge">0 players</span>
       </div>
-      <button class="join-btn" onclick="showJoinModal()">+ Join Queue</button>
     </div>
     <div id="q-list"></div>
   </div>
@@ -549,7 +548,7 @@ function renderHowto() {
   box.style.display = '';
   document.getElementById('howto-title').textContent = 'How to Play';
   document.getElementById('howto-steps').innerHTML = `
-    <span class="howto-step">① Tap "+ Join Queue"</span><span class="howto-arrow">→</span>
+    <span class="howto-step">① Tap "Join Queue"</span><span class="howto-arrow">→</span>
     <span class="howto-step">② Watch for your name in On Deck</span><span class="howto-arrow">→</span>
     <span class="howto-step">③ Head to your court</span><span class="howto-arrow">→</span>
     <span class="howto-step">④ Re-join after game</span>`;
@@ -687,7 +686,7 @@ function renderQueue() {
   const list  = document.getElementById('q-list');
   badge.textContent = `${state.queue.length} players`;
   if (!state.queue.length) {
-    list.innerHTML = `<div class="q-empty"><div class="q-empty-icon">🏸</div><div>No one waiting</div><div class="q-empty-hint">Tap "+ Join Queue" to start</div></div>`;
+    list.innerHTML = `<div class="q-empty"><div class="q-empty-icon">🏸</div><div>No one waiting</div><div class="q-empty-hint">Tap "Join Queue" to start</div></div>`;
     return;
   }
   const avail = IDS.filter(id => state.courts[id]?.players.length < 4);
