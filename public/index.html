@@ -601,8 +601,8 @@ function buildNextCourt(id, slot) {
     return `<div class="p-cell empty"><span class="p-empty-txt">Empty</span></div>`;
   }).join('');
 
-  const undoBtn = (isAdmin && state.canUndo?.[id])
-    ? `<button class="c-btn c-undo" onclick="undoDeck(${id})">↩ Undo</button>` : '';
+  const undoBtn = (isAdmin && count > 0)
+    ? `<button class="c-btn c-undo" onclick="clearNext(${id})" title="Send these players back to the queue">↩ Undo</button>` : '';
 
   let actions = '';
   if (isAdmin) {
@@ -898,7 +898,7 @@ function submitMf() {
 }
 
 // ── Actions ────────────────────────────────────────────
-function undoDeck(courtId)       { socket.emit('undo_deck', courtId); }
+function clearNext(courtId)      { socket.emit('clear_next', courtId); }
 function undoCourtAction(courtId){ socket.emit('undo_court_action', courtId); }
 function addCourt()              { socket.emit('add_court'); }
 function removeCourt(courtId)    { socket.emit('remove_court', courtId); }

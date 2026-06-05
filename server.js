@@ -25,13 +25,11 @@ const state = {
 };
 
 let connectedCount = 0;
-const undoSnapshots = {};
 const courtUndoSnapshots = {}; // courtId -> { type: 'end_game'|'promote', players, wasPlaying }
 
 function stateWithUndo() {
-  const canUndo = Object.fromEntries(INITIAL_COURT_IDS.map(id => [id, !!undoSnapshots[id]]));
   const canUndoCourt = Object.fromEntries(state.courtIds.map(id => [id, !!courtUndoSnapshots[id]]));
-  return { ...state, canUndo, canUndoCourt };
+  return { ...state, canUndoCourt };
 }
 
 function broadcast() {
@@ -59,7 +57,6 @@ function shiftNextSlots() {
   INITIAL_COURT_IDS.forEach((id, i) => {
     state.next[id].players = filled[i] ? [...filled[i]] : [];
   });
-  INITIAL_COURT_IDS.forEach(id => { delete undoSnapshots[id]; });
 }
 
 function cleanupPair(name) {
@@ -240,10 +237,7 @@ io.on('connection', (socket) => {
     courtId = Number(courtId);
     const next = state.next[courtId];
     if (!next) return;
-    const before = new Set(next.players);
     smartFillInto(next.players);
-    const added = next.players.filter(p => !before.has(p));
-    if (added.length > 0) undoSnapshots[courtId] = added;
     broadcast();
   });
 
@@ -275,7 +269,6 @@ io.on('connection', (socket) => {
       .filter(n => n && state.queue.includes(n) && !next.players.includes(n))
       .slice(0, spots);
     if (toAdd.length === 0) return;
-    undoSnapshots[courtId] = toAdd;
     const added = new Set(toAdd);
     state.queue = state.queue.filter(n => !added.has(n));
     toAdd.forEach(cleanupPair);
@@ -333,7 +326,6 @@ io.on('connection', (socket) => {
       delete courtUndoSnapshots[from.id];
     } else if (from.type === 'next') {
       state.next[from.id].players = state.next[from.id].players.filter(n => n !== name);
-      delete undoSnapshots[from.id];
     }
 
     // Add to destination
@@ -344,7 +336,6 @@ io.on('connection', (socket) => {
     } else if (toType === 'next') {
       cleanupPair(name);
       state.next[toId].players.push(name);
-      delete undoSnapshots[toId];
     } else if (toType === 'queue') {
       state.queue.push(name);
     }
@@ -367,7 +358,6 @@ io.on('connection', (socket) => {
     // a court that loses/keeps 4 players is unaffected; just clear stale undo snapshots
     [la, lb].forEach(loc => {
       if (loc.type === 'court') delete courtUndoSnapshots[loc.id];
-      if (loc.type === 'next')  delete undoSnapshots[loc.id];
     });
     broadcast();
   });
@@ -395,7 +385,6 @@ io.on('connection', (socket) => {
     if (wasIn) {
       cleanupPair(name);
       state.queue = [name, ...state.queue];
-      delete undoSnapshots[courtId];
     }
     broadcast();
   });
@@ -415,15 +404,17 @@ io.on('connection', (socket) => {
     broadcast();
   });
 
-  socket.on('undo_deck', (courtId) => {
+  // Clear an On-Deck slot: send everyone in it back to the front of the queue.
+  // Always available while the slot has players (admin "Undo").
+  socket.on('clear_next', (courtId) => {
     if (!socket.isAdmin) return;
     courtId = Number(courtId);
-    const added = undoSnapshots[courtId];
-    if (!added) return;
-    delete undoSnapshots[courtId];
-    const addedSet = new Set(added);
-    state.next[courtId].players = state.next[courtId].players.filter(p => !addedSet.has(p));
-    state.queue = [...added, ...state.queue];
+    const next = state.next[courtId];
+    if (!next || next.players.length === 0) return;
+    const players = [...next.players];
+    next.players = [];
+    players.forEach(cleanupPair);
+    state.queue = [...players, ...state.queue];
     broadcast();
   });
 
@@ -487,7 +478,6 @@ io.on('connection', (socket) => {
     state.players = {};
     state.pairs   = {};
     state.history = [];
-    Object.keys(undoSnapshots).forEach(k => delete undoSnapshots[k]);
     Object.keys(courtUndoSnapshots).forEach(k => delete courtUndoSnapshots[k]);
     broadcast();
   });
