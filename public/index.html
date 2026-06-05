@@ -67,13 +67,17 @@
       .history-sidebar { width:100%; position:static; max-height:360px; border-left:none; border-top:1.5px solid var(--s100); }
     }
 
+    .join-sticky {
+      position:sticky; top:var(--header-h, 70px); z-index:30;
+      margin:0 -18px 22px; padding:10px 18px 12px;
+      background:linear-gradient(180deg,#f0fdf4 0%,#f0fdf4 62%,rgba(240,253,244,0) 100%);
+    }
     .main-join-btn {
       display:block; width:100%;
       background:linear-gradient(135deg,var(--g500) 0%,var(--g600) 100%);
       color:white; border:none; cursor:pointer;
       padding:16px; border-radius:16px;
       font-size:16px; font-weight:800; font-family:inherit;
-      margin-bottom:22px;
       box-shadow:0 4px 16px rgba(22,163,74,0.32);
       transition:box-shadow 0.15s, transform 0.1s;
     }
@@ -348,7 +352,9 @@
       <div class="howto-steps" id="howto-steps"></div>
     </div>
   </div>
-  <button class="main-join-btn" id="main-join-btn" onclick="showJoinModal()">+ Join Queue</button>
+  <div class="join-sticky" id="join-sticky">
+    <button class="main-join-btn" id="main-join-btn" onclick="showJoinModal()">+ Join Queue</button>
+  </div>
 
   <div class="sec-label">
     Courts
@@ -532,7 +538,7 @@ function renderAdminBtn() {
   else         { btn.textContent = '🔒 Admin'; btn.classList.remove('unlocked'); }
   document.getElementById('history-sidebar').classList.toggle('visible', isAdmin);
   document.getElementById('reset-btn').style.display = isAdmin ? '' : 'none';
-  document.getElementById('main-join-btn').style.display = isAdmin ? 'none' : '';
+  document.getElementById('join-sticky').style.display = isAdmin ? 'none' : '';
   document.querySelector('main').classList.toggle('admin-mode', isAdmin);
   document.querySelector('.page-wrap').classList.toggle('admin-layout', isAdmin);
 }
@@ -1027,6 +1033,19 @@ function clearNameError()   { document.getElementById('name-error').style.displa
 
 socket.on('join_success', () => hideJoinModal());
 socket.on('join_error', ({ reason, name }) => { if (reason==='name_taken') showNameError(`"${name}" is already in use. Please use a different name.`); });
+
+// Keep the sticky Join button parked right below the (responsive) header.
+// A ResizeObserver tracks the header through font loads, button wraps, etc.
+function updateHeaderHeight() {
+  const h = document.querySelector('header')?.offsetHeight || 70;
+  document.documentElement.style.setProperty('--header-h', h + 'px');
+}
+updateHeaderHeight();
+window.addEventListener('resize', updateHeaderHeight);
+window.addEventListener('load', updateHeaderHeight);
+const _headerEl = document.querySelector('header');
+if (window.ResizeObserver && _headerEl) new ResizeObserver(updateHeaderHeight).observe(_headerEl);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateHeaderHeight);
 </script>
 </body>
 </html>
