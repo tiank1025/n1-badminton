@@ -247,7 +247,10 @@
     .partner-selector.open { border-color:var(--g500); border-bottom-left-radius:0; border-bottom-right-radius:0; }
     .partner-chevron { font-size:12px; color:var(--s400); transition:transform 0.15s; }
     .partner-selector.open .partner-chevron { transform:rotate(180deg); }
-    .partner-list { max-height:160px; overflow-y:auto; border:2px solid var(--g500); border-top:none; border-bottom-left-radius:12px; border-bottom-right-radius:12px; background:white; margin-bottom:16px; }
+    .partner-list { max-height:220px; overflow-y:auto; border:2px solid var(--g500); border-top:none; border-bottom-left-radius:12px; border-bottom-right-radius:12px; background:white; margin-bottom:16px; }
+    .partner-search { position:sticky; top:0; z-index:2; width:100%; border:none; border-bottom:1.5px solid var(--s100); padding:11px 14px; font-size:14px; font-family:inherit; outline:none; color:var(--s800); background:white; }
+    .partner-search::placeholder { color:var(--s400); }
+    .partner-search:focus { background:var(--g50); }
     .partner-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--s100); transition:background 0.12s; user-select:none; }
     .partner-item:last-child { border-bottom:none; }
     .partner-item:hover { background:var(--g50); }
@@ -773,11 +776,28 @@ function renderPartnerSelector() {
     ? `<span>👥 ${esc(myPartner)}</span><span class="partner-chevron">▾</span>`
     : `<span>Select a partner...</span><span class="partner-chevron">▾</span>`;
   list.style.display = partnerDropOpen ? '' : 'none';
-  if (!partnerDropOpen) return;
-  const others = state.queue.filter(n => n !== document.getElementById('name-input').value.trim());
-  list.innerHTML = others.length
+  if (!partnerDropOpen) { list.innerHTML = ''; return; }
+  // Build search box + items container once; typing only re-renders items (keeps focus).
+  list.innerHTML = `
+    <input class="partner-search" id="partner-search" type="text" placeholder="🔍 Search name..."
+           autocomplete="off" autocorrect="off" spellcheck="false"
+           oninput="renderPartnerItems()" onclick="event.stopPropagation()">
+    <div id="partner-items"></div>`;
+  renderPartnerItems();
+  setTimeout(() => { const s = document.getElementById('partner-search'); if (s) s.focus(); }, 0);
+}
+
+function renderPartnerItems() {
+  const cont = document.getElementById('partner-items');
+  if (!cont) return;
+  const searchEl = document.getElementById('partner-search');
+  const q = (searchEl ? searchEl.value : '').trim().toLowerCase();
+  const myNameVal = document.getElementById('name-input').value.trim();
+  let others = state.queue.filter(n => n !== myNameVal);
+  if (q) others = others.filter(n => n.toLowerCase().includes(q));
+  cont.innerHTML = others.length
     ? others.map(n => `<div class="partner-item" onclick="selectPartner('${escJs(n)}')"><span class="partner-item-name">${esc(n)}</span>${lvlBadge(n)}</div>`).join('')
-    : `<div class="partner-item"><span class="partner-none">No one in queue yet</span></div>`;
+    : `<div class="partner-item"><span class="partner-none">${q ? 'No match' : 'No one in queue yet'}</span></div>`;
 }
 
 function togglePartnerDrop() { partnerDropOpen = !partnerDropOpen; renderPartnerSelector(); }
