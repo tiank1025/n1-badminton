@@ -376,6 +376,7 @@
         <span class="q-title">Waiting</span>
         <span class="q-badge" id="q-badge">0 players</span>
       </div>
+      <button class="join-btn" id="admin-add-btn" onclick="showJoinModal(true)" style="display:none">+ Add Player</button>
     </div>
     <div id="q-list"></div>
   </div>
@@ -393,8 +394,8 @@
 <div class="overlay" id="join-modal" onclick="if(event.target===this)hideJoinModal()">
   <div class="modal">
     <div class="m-handle"></div>
-    <div class="m-title">Join Queue</div>
-    <div class="m-sub">Enter your name to join</div>
+    <div class="m-title" id="join-title">Join Queue</div>
+    <div class="m-sub" id="join-sub">Enter your name to join</div>
     <input class="m-input" id="name-input" type="text" placeholder="Your name" maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')submitJoin()" oninput="clearNameError()">
     <div class="name-error" id="name-error"></div>
     <div class="lvl-section-label">Select your level</div>
@@ -537,6 +538,7 @@ function renderAdminBtn() {
   else         { btn.textContent = '🔒 Admin'; btn.classList.remove('unlocked'); }
   document.getElementById('history-sidebar').classList.toggle('visible', isAdmin);
   document.getElementById('reset-btn').style.display = isAdmin ? '' : 'none';
+  document.getElementById('admin-add-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('join-sticky').style.display = isAdmin ? 'none' : '';
   document.querySelector('main').classList.toggle('admin-mode', isAdmin);
   document.querySelector('.page-wrap').classList.toggle('admin-layout', isAdmin);
@@ -756,13 +758,13 @@ function lvlBadge(name, editable = false) {
 
 function renderLvlPicker() {
   document.getElementById('lvl-picker').innerHTML = LEVELS.map(l => {
-    const col = LEVEL_COLORS[l]; const sel = l === myLevel;
+    const col = LEVEL_COLORS[l]; const sel = l === modalLevel;
     return `<button class="lvl-btn${sel?' sel':''}" style="${sel?`background:${col};`:''}color:${sel?'white':col}" onclick="selectLevel('${l}')">${l}</button>`;
   }).join('');
 }
 
 function selectLevel(l) {
-  myLevel = l; localStorage.setItem('bmt_level', l);
+  modalLevel = l; // committed to myLevel only on a non-admin self-join
   const lbl = document.querySelector('#join-modal .lvl-section-label');
   if (lbl) lbl.style.color = '';
   const picker = document.getElementById('lvl-picker');
@@ -772,6 +774,8 @@ function selectLevel(l) {
 
 // ── Join ───────────────────────────────────────────────
 let myPartner = null, partnerDropOpen = false;
+let modalLevel = '';      // level selected in the open Join modal
+let adminAddMode = false; // admin adding someone else (don't overwrite my identity)
 
 function renderPartnerSelector() {
   const sel  = document.getElementById('partner-selector');
@@ -808,9 +812,14 @@ function renderPartnerItems() {
 function togglePartnerDrop() { partnerDropOpen = !partnerDropOpen; renderPartnerSelector(); }
 function selectPartner(name) { myPartner = name; partnerDropOpen = false; renderPartnerSelector(); }
 
-function showJoinModal() {
-  document.getElementById('name-input').value = myName || '';
+function showJoinModal(adminAdd = false) {
+  adminAddMode = !!adminAdd;
+  document.getElementById('name-input').value = adminAddMode ? '' : (myName || '');
+  modalLevel = adminAddMode ? '' : (myLevel || '');
   myPartner = null; partnerDropOpen = false;
+  document.getElementById('join-title').textContent = adminAddMode ? 'Add Player' : 'Join Queue';
+  document.getElementById('join-sub').textContent   = adminAddMode ? 'Add someone to the waitlist' : 'Enter your name to join';
+  clearNameError();
   renderLvlPicker(); renderPartnerSelector();
   openModal('join-modal');
   setTimeout(() => document.getElementById('name-input').focus(), 250);
@@ -820,15 +829,18 @@ function submitJoin() {
   const inp = document.getElementById('name-input');
   const name = inp.value.trim();
   if (!name) { inp.focus(); return; }
-  if (!myLevel) {
+  if (!modalLevel) {
     const lbl = document.querySelector('#join-modal .lvl-section-label');
     lbl.style.color = '#ef4444';
     document.getElementById('lvl-picker').style.outline = '2px solid #ef4444';
     document.getElementById('lvl-picker').style.borderRadius = '6px';
     return;
   }
-  myName = name; localStorage.setItem('bmt_name', name);
-  socket.emit('join_queue', { name, level: myLevel, partner: myPartner || '' });
+  if (!adminAddMode) {
+    myName = name; localStorage.setItem('bmt_name', name);
+    myLevel = modalLevel; localStorage.setItem('bmt_level', modalLevel);
+  }
+  socket.emit('join_queue', { name, level: modalLevel, partner: myPartner || '' });
 }
 
 // ── Assign ─────────────────────────────────────────────
