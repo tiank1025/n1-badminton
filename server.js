@@ -425,14 +425,30 @@ io.on('connection', (socket) => {
     if (court && court.players.length === 4) { delete courtUndoSnapshots[courtId]; court.playing = true; broadcast(); }
   });
 
-  socket.on('end_game', ({ courtId, toQueue }) => {
+  socket.on('end_game', ({ courtId, toQueue, score, teams }) => {
     if (!socket.isAdmin) return;
     courtId = Number(courtId);
     const court = state.courts[courtId];
     if (!court) return;
     if (court.players.length > 0) {
       courtUndoSnapshots[courtId] = { type: 'end_game', players: [...court.players], wasPlaying: court.playing };
-      state.history.unshift({ time: Date.now(), courtId, players: [...court.players] });
+      // Store players in team order (team1 first, team2 next) if a valid split is given.
+      let ordered = [...court.players];
+      if (Array.isArray(teams) && teams.length === 2
+          && teams.every(t => Array.isArray(t) && t.length === 2)) {
+        const flat = [teams[0][0], teams[0][1], teams[1][0], teams[1][1]].map(sanitize);
+        const same = flat.length === court.players.length
+          && [...flat].sort().join('|') === [...court.players].sort().join('|');
+        if (same) ordered = flat;
+      }
+      const entry = { time: Date.now(), courtId, players: ordered };
+      // optional score: { a, b } for team1 (players 0,1) vs team2 (players 2,3)
+      if (score && typeof score === 'object') {
+        const a = Number(score.a), b = Number(score.b);
+        if (Number.isFinite(a) && Number.isFinite(b) && a >= 0 && b >= 0)
+          entry.score = { a: Math.round(a), b: Math.round(b) };
+      }
+      state.history.unshift(entry);
       if (state.history.length > 100) state.history.pop();
     }
     if (toQueue) state.queue.push(...court.players);

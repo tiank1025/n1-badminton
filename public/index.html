@@ -301,6 +301,26 @@
     .history-court-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
     .history-players { display:flex; flex-direction:column; gap:3px; }
     .history-player { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--s700); }
+    .history-team { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 6px; border-radius:8px; }
+    .history-team.win { background:var(--g100); }
+    .history-team-names { display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:12px; font-weight:600; color:var(--s700); }
+    .history-team.win .history-team-names { color:var(--g800); }
+    .history-score { font-size:14px; font-weight:900; color:var(--s500); font-variant-numeric:tabular-nums; flex-shrink:0; white-space:nowrap; }
+    .history-team.win .history-score { color:var(--g700); }
+
+    /* ── End-game score modal ── */
+    .end-opt-label { font-size:12px; font-weight:700; color:var(--s600); margin-bottom:8px; }
+    .end-opts { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+    .end-opt { width:100%; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:4px; border:2px solid var(--s200); background:white; border-radius:10px; padding:10px 8px; font-size:13px; font-weight:700; color:var(--s600); cursor:pointer; font-family:inherit; transition:all 0.15s; }
+    .end-opt:hover { border-color:var(--s400); color:var(--s800); }
+    .end-opt.sel { border-color:var(--g500); background:var(--g50); color:var(--g800); }
+    .end-opt-vs { color:var(--s400); font-weight:600; font-size:11px; margin:0 6px; }
+    .end-team { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 14px; border:2px solid var(--s200); border-radius:12px; background:var(--s50); }
+    .end-team-names { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:14px; font-weight:700; color:var(--s700); }
+    .end-score { width:60px; flex-shrink:0; border:2px solid var(--s200); border-radius:10px; padding:9px 6px; font-size:18px; font-weight:800; text-align:center; font-family:inherit; color:var(--s800); outline:none; background:white; -moz-appearance:textfield; }
+    .end-score::-webkit-outer-spin-button, .end-score::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+    .end-score:focus { border-color:var(--g500); box-shadow:0 0 0 3px rgba(34,197,94,0.12); }
+    .end-vs { text-align:center; font-size:12px; font-weight:800; color:var(--s400); margin:7px 0; letter-spacing:1px; }
   </style>
 </head>
 <body>
@@ -454,6 +474,20 @@
     <div class="m-sub" id="lvl-modal-sub"></div>
     <div class="lvl-grid" id="lvl-modal-picker"></div>
     <button class="m-cancel-full" onclick="closeLvlModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- End Game Modal (optional score) -->
+<div class="overlay" id="end-modal" onclick="if(event.target===this)closeModal('end-modal')">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title" id="end-title">End Game</div>
+    <div class="m-sub">Record the score (optional), then re-queue players.</div>
+    <div id="end-teams"></div>
+    <div class="m-row">
+      <button class="m-btn cancel" onclick="closeModal('end-modal')">Cancel</button>
+      <button class="m-btn ok" onclick="confirmEnd()">End &amp; Re-queue</button>
+    </div>
   </div>
 </div>
 
@@ -659,7 +693,7 @@ function buildCourt(id) {
   if (isAdmin) {
     if (c.playing || full) {
       const undoBtn = (!c.playing && hasCourtUndo) ? `<button class="c-btn c-undo" onclick="undoCourtAction(${id})">↩ Undo Send</button>` : '';
-      actions = `${undoBtn}<button class="c-btn eq" onclick="endGame(${id},true)">↩ End & Re-queue</button>`;
+      actions = `${undoBtn}<button class="c-btn eq" onclick="showEndModal(${id})">↩ End & Re-queue</button>`;
     } else if (count === 0 && hasCourtUndo) {
       actions = `<button class="c-btn c-undo" onclick="undoCourtAction(${id})">↩ Undo End</button>`;
     } else {
@@ -734,14 +768,25 @@ function renderHistory() {
     const mins = Math.round((Date.now() - h.time) / 60000);
     const timeStr = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.floor(mins/60)}h ${mins%60}m ago`;
     const players = h.players || [];
+    let body;
+    if (h.score && players.length === 4) {
+      const t1 = [players[0], players[1]], t2 = [players[2], players[3]];
+      const aWin = h.score.a > h.score.b, bWin = h.score.b > h.score.a;
+      const teamRow = (names, val, win) => `
+        <div class="history-team${win?' win':''}">
+          <span class="history-team-names">${names.map(p => `${lvlBadge(p)} ${esc(p)}`).join(' & ')}</span>
+          <span class="history-score">${val}${win?' 🏆':''}</span>
+        </div>`;
+      body = teamRow(t1, h.score.a, aWin) + teamRow(t2, h.score.b, bWin);
+    } else {
+      body = `<div class="history-players">${players.map(p => `<div class="history-player">${lvlBadge(p)} ${esc(p)}</div>`).join('')}</div>`;
+    }
     return `<div class="history-item">
       <div class="history-meta">
         <span class="history-court-dot" style="background:${courtColor(h.courtId)}"></span>
         Court ${h.courtId} · ${timeStr}
       </div>
-      <div class="history-players">
-        ${players.map(p => `<div class="history-player">${lvlBadge(p)} ${esc(p)}</div>`).join('')}
-      </div>
+      ${body}
     </div>`;
   }).join('');
 }
@@ -915,6 +960,65 @@ function undoCourtAction(courtId){ socket.emit('undo_court_action', courtId); }
 function addCourt()              { socket.emit('add_court'); }
 function removeCourt(courtId)    { socket.emit('remove_court', courtId); }
 function endGame(courtId,toQueue){ socket.emit('end_game', { courtId, toQueue }); }
+
+// End-game modal with optional score + selectable team split.
+// Each pairing [i,j,k,l] => Team 1 = (players[i],players[j]), Team 2 = (players[k],players[l]).
+const END_PAIRINGS = [[0,1,2,3],[0,2,1,3],[0,3,1,2]];
+let endCourtId = null, endPairingIdx = 0;
+
+function showEndModal(courtId) {
+  endCourtId = Number(courtId);
+  const players = state.courts[endCourtId]?.players || [];
+  if (players.length < 4) { endGame(endCourtId, true); return; } // nothing to score
+  endPairingIdx = 0;
+  document.getElementById('end-title').textContent = `End Game — Court ${endCourtId}`;
+  renderEndModal();
+  openModal('end-modal');
+}
+
+function setEndPairing(idx) {
+  const a = document.getElementById('end-score-a')?.value ?? '';
+  const b = document.getElementById('end-score-b')?.value ?? '';
+  endPairingIdx = idx;
+  renderEndModal(a, b);
+}
+
+function renderEndModal(scoreA = '', scoreB = '') {
+  const players = state.courts[endCourtId]?.players || [];
+  if (players.length < 4) return;
+  const opts = END_PAIRINGS.map((pr, idx) => {
+    const [i,j,k,l] = pr;
+    return `<button type="button" class="end-opt${idx===endPairingIdx?' sel':''}" onclick="setEndPairing(${idx})">
+      ${esc(players[i])} + ${esc(players[j])}<span class="end-opt-vs">vs</span>${esc(players[k])} + ${esc(players[l])}
+    </button>`;
+  }).join('');
+  const [i,j,k,l] = END_PAIRINGS[endPairingIdx];
+  const teamRow = (names, side, val) => `
+    <div class="end-team">
+      <span class="end-team-names">${names.map(p => `${lvlBadge(p)} ${esc(p)}`).join(' & ')}</span>
+      <input class="end-score" id="end-score-${side}" type="number" inputmode="numeric" min="0" max="99" placeholder="–" autocomplete="off" value="${esc(val)}">
+    </div>`;
+  document.getElementById('end-teams').innerHTML =
+    `<div class="end-opt-label">Pick teams</div><div class="end-opts">${opts}</div>` +
+    teamRow([players[i],players[j]], 'a', scoreA) +
+    `<div class="end-vs">vs</div>` +
+    teamRow([players[k],players[l]], 'b', scoreB);
+}
+
+function confirmEnd() {
+  if (endCourtId == null) return;
+  const a = (document.getElementById('end-score-a')?.value || '').trim();
+  const b = (document.getElementById('end-score-b')?.value || '').trim();
+  const score = (a !== '' && b !== '') ? { a: Number(a), b: Number(b) } : null;
+  const players = state.courts[endCourtId]?.players || [];
+  let teams = null;
+  if (players.length === 4) {
+    const [i,j,k,l] = END_PAIRINGS[endPairingIdx];
+    teams = [[players[i], players[j]], [players[k], players[l]]];
+  }
+  socket.emit('end_game', { courtId: endCourtId, toQueue: true, score, teams });
+  closeModal('end-modal'); endCourtId = null;
+}
 function removeFromCourt(courtId,name){ socket.emit('remove_from_court', { courtId, name }); }
 function removeFromQueue(name)   { socket.emit('remove_from_queue', name); if (name===myName){myName='';localStorage.removeItem('bmt_name');} }
 function removeFromNext(courtId,name) { socket.emit('remove_from_next', { courtId, name }); }
