@@ -401,6 +401,7 @@ io.on('connection', (socket) => {
     court.players = [...next.players];
     next.players  = [];
     shiftNextSlots();
+    io.emit('announce', { courtId: toCourtId, players: [...court.players] });
     broadcast();
   });
 

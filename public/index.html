@@ -282,6 +282,7 @@
     .admin-btn.unlocked { background:rgba(253,230,138,0.18); border-color:rgba(253,230,138,0.4); color:#fde68a; }
     .admin-btn.danger { background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.45); color:#fecaca; }
     .admin-btn.danger:hover { background:rgba(239,68,68,0.32); }
+    .admin-btn.on { background:rgba(134,239,172,0.22); border-color:rgba(134,239,172,0.5); color:#bbf7d0; }
 
     /* ── History sidebar content ── */
     .history-sidebar-title {
@@ -356,6 +357,7 @@
       <div id="my-status"></div>
       <div class="hd-btn-row">
         <button class="admin-btn" onclick="showQrModal()">📷 QR</button>
+        <button class="admin-btn" id="announce-btn" onclick="toggleAnnounce()" style="display:none">🔇 Announce</button>
         <button class="admin-btn danger" id="reset-btn" onclick="showResetModal()" style="display:none">🗑 Reset</button>
         <button class="admin-btn" id="admin-btn" onclick="onAdminBtnClick()">🔒 Admin</button>
       </div>
@@ -572,8 +574,10 @@ function renderAdminBtn() {
   else         { btn.textContent = '🔒 Admin'; btn.classList.remove('unlocked'); }
   document.getElementById('history-sidebar').classList.toggle('visible', isAdmin);
   document.getElementById('reset-btn').style.display = isAdmin ? '' : 'none';
+  document.getElementById('announce-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('admin-add-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('join-sticky').style.display = isAdmin ? 'none' : '';
+  renderAnnounceBtn();
   document.querySelector('main').classList.toggle('admin-mode', isAdmin);
   document.querySelector('.page-wrap').classList.toggle('admin-layout', isAdmin);
 }
@@ -1112,6 +1116,50 @@ function submitPin() {
 // ── Reset all data (admin) ─────────────────────────────
 function showResetModal() { if (isAdmin) openModal('reset-modal'); }
 function confirmReset()    { socket.emit('reset_all'); closeModal('reset-modal'); }
+
+// ── Voice announcements (admin host device) ────────────
+const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+let announceOn = false;   // only this device speaks when true
+let enVoice = null;
+function pickEnVoice() {
+  if (!ttsSupported) return;
+  const voices = speechSynthesis.getVoices() || [];
+  enVoice = voices.find(v => /^en[-_]US/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang)) || null;
+}
+if (ttsSupported) { pickEnVoice(); speechSynthesis.onvoiceschanged = pickEnVoice; }
+
+function speak(text) {
+  if (!ttsSupported || !announceOn) return;
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    if (enVoice) u.voice = enVoice;
+    u.rate = 1.0; u.pitch = 1.0;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+function toggleAnnounce() {
+  if (!isAdmin) return;
+  if (!ttsSupported) { alert('This browser does not support voice announcements'); return; }
+  announceOn = !announceOn;
+  // The click itself unlocks audio; a short confirm primes the engine.
+  try { speechSynthesis.cancel(); } catch (e) {}
+  if (announceOn) { announceOn = true; speak('Announcements on'); }
+  renderAnnounceBtn();
+}
+
+function renderAnnounceBtn() {
+  const btn = document.getElementById('announce-btn');
+  if (!btn) return;
+  btn.textContent = announceOn ? '🔊 Announcing' : '🔇 Announce';
+  btn.classList.toggle('on', announceOn);
+}
+
+socket.on('announce', ({ courtId, players }) => {
+  if (!announceOn || !players || !players.length) return;
+  speak(`Court ${courtId}, please come up: ${players.join(', ')}`);
+});
 
 // ── Edit Level Modal ───────────────────────────────────
 let editLvlName = null;
