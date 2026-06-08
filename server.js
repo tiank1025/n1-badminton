@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -27,6 +28,50 @@ const state = {
 let connectedCount = 0;
 const courtUndoSnapshots = {}; // courtId -> { type: 'end_game'|'promote', players, wasPlaying }
 
+// ── Persistence ─────────────────────────────────────────
+// Set STATE_FILE to a path on a persistent disk (e.g. /var/data/state.json on
+// Render with a disk attached) so the board survives deploys/restarts. With no
+// disk, it falls back to a local file (best-effort; ephemeral on free tiers).
+const STATE_FILE = process.env.STATE_FILE || path.join(__dirname, 'state.json');
+
+function loadState() {
+  try {
+    const saved = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    if (saved && typeof saved === 'object') {
+      if (Array.isArray(saved.courtIds))               state.courtIds = saved.courtIds;
+      if (saved.courts  && typeof saved.courts  === 'object') state.courts  = saved.courts;
+      if (saved.next    && typeof saved.next    === 'object') state.next    = saved.next;
+      if (Array.isArray(saved.queue))                  state.queue   = saved.queue;
+      if (saved.players && typeof saved.players === 'object') state.players = saved.players;
+      if (saved.pairs   && typeof saved.pairs   === 'object') state.pairs   = saved.pairs;
+      if (Array.isArray(saved.history))                state.history = saved.history;
+      // Heal any missing court/on-deck entries so the rest of the code is safe.
+      INITIAL_COURT_IDS.forEach(id => { if (!state.next[id]) state.next[id] = { players: [] }; });
+      state.courtIds.forEach(id => { if (!state.courts[id]) state.courts[id] = { players: [], playing: false }; });
+      console.log(`   状态已从 ${STATE_FILE} 恢复`);
+    }
+  } catch (e) {
+    if (e.code !== 'ENOENT') console.warn('   加载状态失败:', e.message);
+  }
+}
+
+function saveNow() {
+  try {
+    fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+    const tmp = STATE_FILE + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(state));
+    fs.renameSync(tmp, STATE_FILE); // atomic replace
+  } catch (e) {
+    console.warn('   保存状态失败:', e.message);
+  }
+}
+
+let saveTimer = null;
+function scheduleSave() {
+  if (saveTimer) return;            // debounce: batch rapid mutations into ~1 write/sec
+  saveTimer = setTimeout(() => { saveTimer = null; saveNow(); }, 1000);
+}
+
 function stateWithUndo() {
   const canUndoCourt = Object.fromEntries(state.courtIds.map(id => [id, !!courtUndoSnapshots[id]]));
   return { ...state, canUndoCourt };
@@ -34,6 +79,7 @@ function stateWithUndo() {
 
 function broadcast() {
   io.emit('state_update', stateWithUndo());
+  scheduleSave();
 }
 
 function sanitize(name) {
@@ -508,6 +554,19 @@ io.on('connection', (socket) => {
     broadcast();
   });
 });
+
+loadState();
+
+// Flush the latest state on shutdown (Render sends SIGTERM on deploy/restart).
+let shuttingDown = false;
+function gracefulExit() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  saveNow();
+  process.exit(0);
+}
+process.on('SIGTERM', gracefulExit);
+process.on('SIGINT', gracefulExit);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {

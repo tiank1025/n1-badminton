@@ -1,1 +1,5 @@
 node_modules/
+state.json
+state.json.tmp
+.idea/
+.claude/worktrees/
