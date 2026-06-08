@@ -77,7 +77,18 @@ function stateWithUndo() {
   return { ...state, canUndoCourt };
 }
 
+// Stamp a start time when a court fills (game begins); clear it when it empties.
+function syncCourtTimers() {
+  state.courtIds.forEach(id => {
+    const c = state.courts[id];
+    if (!c) return;
+    if (c.players.length === 4) { if (!c.startedAt) c.startedAt = Date.now(); }
+    else if (c.startedAt) { delete c.startedAt; }
+  });
+}
+
 function broadcast() {
+  syncCourtTimers();
   io.emit('state_update', stateWithUndo());
   scheduleSave();
 }
@@ -489,6 +500,7 @@ io.on('connection', (socket) => {
         if (same) ordered = flat;
       }
       const entry = { time: Date.now(), courtId, players: ordered };
+      if (court.startedAt) entry.durationMs = Date.now() - court.startedAt; // how long the game ran
       // optional score: { a, b } for team1 (players 0,1) vs team2 (players 2,3)
       if (score && typeof score === 'object') {
         const a = Number(score.a), b = Number(score.b);

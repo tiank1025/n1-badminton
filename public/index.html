@@ -138,7 +138,8 @@
     .court-head::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,0.14) 0%,transparent 60%); pointer-events:none; }
     .court-name { font-size:14px; font-weight:900; color:white; letter-spacing:-0.2px; }
     .court-badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; background:rgba(255,255,255,0.22); color:white; backdrop-filter:blur(4px); }
-    .court-badge.live { background:white; animation:blink 2s ease-in-out infinite; }
+    .court-badge.live { background:white; color:var(--g700); font-variant-numeric:tabular-nums; }
+    .court-timer { font-weight:800; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.55} }
     .court-rm-btn { background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); color:rgba(255,255,255,0.85); cursor:pointer; border-radius:6px; padding:1px 7px; font-size:15px; font-weight:700; line-height:1.4; font-family:inherit; margin-left:auto; transition:background 0.15s; }
     .court-rm-btn:hover { background:rgba(220,38,38,0.5); color:white; }
@@ -566,6 +567,7 @@ socket.on('admin_result', ({ ok }) => {
 function render() {
   renderHowto(); renderSummary(); renderCourts(); renderNext();
   renderQueue(); renderMyStatus(); renderAdminBtn(); renderHistory();
+  updateTimers();
 }
 
 function renderAdminBtn() {
@@ -676,7 +678,9 @@ function buildCourt(id) {
   const col   = courtColor(id);
   const count = c.players.length;
   const full  = count === 4;
-  const statusLabel = c.playing ? '● Live' : full ? '◎ Ready' : `${count}/4`;
+  const statusLabel = full
+    ? `⏱ <span class="court-timer" data-start="${c.startedAt || ''}">${c.startedAt ? fmtElapsed(Date.now() - c.startedAt) : '0:00'}</span>`
+    : `${count}/4`;
   const statusClass = (c.playing || full) ? 'live' : '';
 
   const cells = Array.from({length:4}, (_,i) => {
@@ -788,7 +792,7 @@ function renderHistory() {
     return `<div class="history-item">
       <div class="history-meta">
         <span class="history-court-dot" style="background:${courtColor(h.courtId)}"></span>
-        Court ${h.courtId} · ${timeStr}
+        Court ${h.courtId} · ${timeStr}${h.durationMs ? ` · ⏱ ${fmtDuration(h.durationMs)}` : ''}
       </div>
       ${body}
     </div>`;
@@ -1187,6 +1191,25 @@ function showQrModal() {
     qrGenerated = true;
   }
 }
+
+// ── Court timers ───────────────────────────────────────
+function fmtElapsed(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+function fmtDuration(ms) {
+  const m = Math.max(0, Math.round(ms / 60000));
+  if (m < 1) return '<1m';
+  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+}
+function updateTimers() {
+  const now = Date.now();
+  document.querySelectorAll('.court-timer').forEach(el => {
+    const start = Number(el.getAttribute('data-start'));
+    if (start) el.textContent = fmtElapsed(now - start);
+  });
+}
+setInterval(updateTimers, 1000);
 
 // ── Utils ──────────────────────────────────────────────
 function esc(s)   { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
