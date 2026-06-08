@@ -27,6 +27,7 @@ const state = {
 
 let connectedCount = 0;
 const courtUndoSnapshots = {}; // courtId -> { type: 'end_game'|'promote', players, wasPlaying }
+const queuedSince = {};        // name -> timestamp they (continuously) entered the queue
 
 // ── Persistence ─────────────────────────────────────────
 // Set STATE_FILE to a path on a persistent disk (e.g. /var/data/state.json on
@@ -74,7 +75,7 @@ function scheduleSave() {
 
 function stateWithUndo() {
   const canUndoCourt = Object.fromEntries(state.courtIds.map(id => [id, !!courtUndoSnapshots[id]]));
-  return { ...state, canUndoCourt };
+  return { ...state, canUndoCourt, queuedSince };
 }
 
 // Stamp a start time when a court fills (game begins); clear it when it empties.
@@ -87,8 +88,17 @@ function syncCourtTimers() {
   });
 }
 
+// Track how long each player has been continuously waiting in the queue.
+function syncQueueTimers() {
+  const now = Date.now();
+  const inQueue = new Set(state.queue);
+  state.queue.forEach(n => { if (!queuedSince[n]) queuedSince[n] = now; });
+  Object.keys(queuedSince).forEach(n => { if (!inQueue.has(n)) delete queuedSince[n]; });
+}
+
 function broadcast() {
   syncCourtTimers();
+  syncQueueTimers();
   io.emit('state_update', stateWithUndo());
   scheduleSave();
 }

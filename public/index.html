@@ -310,6 +310,17 @@
     .history-score { font-size:14px; font-weight:900; color:var(--s500); font-variant-numeric:tabular-nums; flex-shrink:0; white-space:nowrap; }
     .history-team.win .history-score { color:var(--g700); }
 
+    /* ── Stats modal ── */
+    .stat-section-title { font-size:11px; font-weight:800; letter-spacing:0.8px; text-transform:uppercase; color:var(--g700); margin-bottom:8px; }
+    .stat-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:9px; }
+    .stat-row:nth-child(even) { background:var(--s50); }
+    .stat-head { background:none !important; color:var(--s400); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; padding-bottom:4px; }
+    .stat-name { display:flex; align-items:center; gap:7px; font-size:14px; font-weight:600; color:var(--s700); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .stat-val { font-size:13px; font-weight:800; color:var(--g700); flex-shrink:0; font-variant-numeric:tabular-nums; }
+    .stat-cols { display:flex; gap:0; flex-shrink:0; }
+    .stat-cols > span { width:34px; text-align:center; font-size:14px; font-weight:800; color:var(--s700); font-variant-numeric:tabular-nums; }
+    .stat-empty { text-align:center; color:var(--s400); font-size:13px; padding:14px 0; }
+
     /* ── End-game score modal ── */
     .end-opt-label { font-size:12px; font-weight:700; color:var(--s600); margin-bottom:8px; }
     .end-opts { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
@@ -358,6 +369,7 @@
       <div id="my-status"></div>
       <div class="hd-btn-row">
         <button class="admin-btn" onclick="showQrModal()">📷 QR</button>
+        <button class="admin-btn" id="stats-btn" onclick="showStatsModal()" style="display:none">📊 Stats</button>
         <button class="admin-btn" id="announce-btn" onclick="toggleAnnounce()" style="display:none">🔇 Announce</button>
         <button class="admin-btn danger" id="reset-btn" onclick="showResetModal()" style="display:none">🗑 Reset</button>
         <button class="admin-btn" id="admin-btn" onclick="onAdminBtnClick()">🔒 Admin</button>
@@ -480,6 +492,20 @@
   </div>
 </div>
 
+<!-- Stats Modal (admin) -->
+<div class="overlay" id="stats-modal" onclick="if(event.target===this)closeModal('stats-modal')">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title">Session Stats</div>
+    <div id="stats-body" style="max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+    <div class="m-row" style="margin-top:12px">
+      <button class="m-btn cancel" onclick="exportGamesCsv()">⬇ Games CSV</button>
+      <button class="m-btn cancel" onclick="exportPlayersCsv()">⬇ Players CSV</button>
+    </div>
+    <button class="m-cancel-full" onclick="closeModal('stats-modal')">Close</button>
+  </div>
+</div>
+
 <!-- End Game Modal (optional score) -->
 <div class="overlay" id="end-modal" onclick="if(event.target===this)closeModal('end-modal')">
   <div class="modal">
@@ -576,6 +602,7 @@ function renderAdminBtn() {
   else         { btn.textContent = '🔒 Admin'; btn.classList.remove('unlocked'); }
   document.getElementById('history-sidebar').classList.toggle('visible', isAdmin);
   document.getElementById('reset-btn').style.display = isAdmin ? '' : 'none';
+  document.getElementById('stats-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('announce-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('admin-add-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('join-sticky').style.display = isAdmin ? 'none' : '';
@@ -661,11 +688,13 @@ function buildNextCourt(id, slot) {
   }
 
   const dropAttrs = (isAdmin && count < 4) ? ` ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropNext(event,${id})"` : '';
+  let badge = '⏳ Next';
+  if (isAdmin && count > 0) { const eta = onDeckEtaMin(id); if (eta != null) badge = eta <= 1 ? '≈ now' : `~${eta} min`; }
   return `
     <div class="court-card next-card"${dropAttrs}>
       <div class="court-head" style="background:${col}">
         <span class="court-name">On Deck ${slot}</span>
-        <span class="court-badge">⏳ Next</span>
+        <span class="court-badge" title="Estimated wait for a court">${badge}</span>
       </div>
       <div class="p-grid">${cells}</div>
       ${actions ? `<div class="c-actions">${actions}</div>` : ''}
@@ -679,7 +708,9 @@ function buildCourt(id) {
   const count = c.players.length;
   const full  = count === 4;
   const statusLabel = full
-    ? `⏱ <span class="court-timer" data-start="${c.startedAt || ''}">${c.startedAt ? fmtElapsed(Date.now() - c.startedAt) : '0:00'}</span>`
+    ? (isAdmin
+        ? `⏱ <span class="court-timer" data-start="${c.startedAt || ''}">${c.startedAt ? fmtElapsed(Date.now() - c.startedAt) : '0:00'}</span>`
+        : '● Live')
     : `${count}/4`;
   const statusClass = (c.playing || full) ? 'live' : '';
 
@@ -725,6 +756,30 @@ function buildCourt(id) {
     </div>`;
 }
 
+// ── Wait-time estimate (shown on On Deck) ──────────────
+function avgGameMinutes() {
+  const durs = (state.history || []).filter(h => h.durationMs > 0).slice(0, 10).map(h => h.durationMs);
+  if (!durs.length) return 12; // sensible default before any games finish
+  return Math.max(4, (durs.reduce((a, b) => a + b, 0) / durs.length) / 60000);
+}
+// Estimated minutes until a court is free for the On-Deck group in slot `slotId`.
+// Model: each court has an availability time (0 if it has space, else remaining
+// game time); On-Deck groups (in slot order) take the earliest-available courts.
+function onDeckEtaMin(slotId) {
+  const filled = INITIAL_IDS.filter(id => (state.next[id]?.players.length || 0) > 0);
+  const k = filled.indexOf(slotId);
+  if (k < 0) return null;
+  const now = Date.now(), D = avgGameMinutes();
+  const courtTimes = IDS.map(id => {
+    const c = state.courts[id];
+    if (!c || c.players.length < 4) return 0; // free now
+    const elapsed = c.startedAt ? (now - c.startedAt) / 60000 : D / 2;
+    return Math.max(0, D - elapsed);
+  }).sort((a, b) => a - b);
+  if (!courtTimes.length) return 0;
+  return Math.max(0, Math.round(courtTimes[Math.min(k, courtTimes.length - 1)]));
+}
+
 function renderQueue() {
   const badge = document.getElementById('q-badge');
   const list  = document.getElementById('q-list');
@@ -759,7 +814,8 @@ function renderMyStatus() {
   const onDeck  = IDS.find(id => state.next[id]?.players.includes(myName));
   const qPos    = state.queue.indexOf(myName);
   if (onCourt)     el.innerHTML = `<span style="color:#86efac;font-size:12px">✓ Court ${onCourt}</span>`;
-  else if (onDeck) el.innerHTML = `<span style="color:#fdba74;font-size:12px">⏳ On Deck ${INITIAL_IDS.indexOf(onDeck)+1}</span>`;
+  else if (onDeck) { const eta = isAdmin ? onDeckEtaMin(onDeck) : null;
+                     el.innerHTML = `<span style="color:#fdba74;font-size:12px">⏳ On Deck ${INITIAL_IDS.indexOf(onDeck)+1}${eta!=null ? (eta<=1?' · ≈ now':' · ~'+eta+' min') : ''}</span>`; }
   else if (qPos>=0)el.innerHTML = `<span style="color:#fde68a;font-size:12px">Queue #${qPos+1}</span>`;
   else             el.innerHTML = `<span style="color:rgba(255,255,255,0.5);font-size:12px">${esc(myName)}</span>`;
 }
@@ -1120,6 +1176,82 @@ function submitPin() {
 // ── Reset all data (admin) ─────────────────────────────
 function showResetModal() { if (isAdmin) openModal('reset-modal'); }
 function confirmReset()    { socket.emit('reset_all'); closeModal('reset-modal'); }
+
+// ── Session stats (admin) ──────────────────────────────
+function computeStats() {
+  const stats = {}; // name -> { games, wins, losses }
+  (state.history || []).forEach(h => {
+    const players = h.players || [];
+    players.forEach(p => { (stats[p] = stats[p] || { games:0, wins:0, losses:0 }).games++; });
+    if (h.score && players.length === 4) {
+      const t1 = [players[0], players[1]], t2 = [players[2], players[3]];
+      if (h.score.a > h.score.b)      { t1.forEach(p => stats[p].wins++);   t2.forEach(p => stats[p].losses++); }
+      else if (h.score.b > h.score.a) { t2.forEach(p => stats[p].wins++);   t1.forEach(p => stats[p].losses++); }
+    }
+  });
+  return stats;
+}
+
+function showStatsModal() { if (!isAdmin) return; renderStats(); openModal('stats-modal'); }
+
+function renderStats() {
+  const now = Date.now();
+  const qs = state.queuedSince || {};
+  const waiting = state.queue.map(n => ({ n, since: qs[n] || now })).sort((a, b) => a.since - b.since);
+  const waitHtml = waiting.length
+    ? waiting.map(w => `<div class="stat-row"><span class="stat-name">${lvlBadge(w.n)} ${esc(w.n)}</span><span class="stat-val">${fmtDuration(now - w.since)}</span></div>`).join('')
+    : `<div class="stat-empty">No one waiting</div>`;
+
+  const stats = computeStats();
+  const players = Object.keys(stats).sort((a, b) =>
+    stats[b].games - stats[a].games || stats[b].wins - stats[a].wins || a.localeCompare(b));
+  const playersHtml = players.length
+    ? `<div class="stat-row stat-head"><span class="stat-name">Player</span><span class="stat-cols"><span>G</span><span>W</span><span>L</span></span></div>` +
+      players.map(p => { const s = stats[p];
+        return `<div class="stat-row"><span class="stat-name">${lvlBadge(p)} ${esc(p)}</span><span class="stat-cols"><span>${s.games}</span><span>${s.wins}</span><span>${s.losses}</span></span></div>`;
+      }).join('')
+    : `<div class="stat-empty">No games completed yet</div>`;
+
+  document.getElementById('stats-body').innerHTML =
+    `<div class="stat-section-title">⏳ Waiting longest</div>${waitHtml}` +
+    `<div class="stat-section-title" style="margin-top:16px">🏸 Players <span style="font-weight:600;color:var(--s400)">(W/L from scored games)</span></div>${playersHtml}`;
+}
+
+// ── CSV export ─────────────────────────────────────────
+function csvCell(v) { v = String(v == null ? '' : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function downloadCsv(filename, rows) {
+  const csv = rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM = Excel-friendly
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function dateStamp() { const d = new Date(); const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`; }
+function exportPlayersCsv() {
+  const stats = computeStats();
+  const rows = [['Name', 'Level', 'Games', 'Wins', 'Losses', 'Win%']];
+  Object.keys(stats).sort((a, b) => stats[b].games - stats[a].games || a.localeCompare(b)).forEach(p => {
+    const s = stats[p], decided = s.wins + s.losses;
+    rows.push([p, state.players[p] || '', s.games, s.wins, s.losses, decided ? Math.round(100 * s.wins / decided) + '%' : '']);
+  });
+  downloadCsv(`n1-players-${dateStamp()}.csv`, rows);
+}
+function exportGamesCsv() {
+  const rows = [['Time', 'Court', 'Team 1', 'Team 2', 'Score', 'Duration(min)']];
+  (state.history || []).forEach(h => {
+    const p = h.players || [];
+    const t1 = p.length === 4 ? `${p[0]} & ${p[1]}` : p.join(' ');
+    const t2 = p.length === 4 ? `${p[2]} & ${p[3]}` : '';
+    rows.push([
+      new Date(h.time).toLocaleString(), h.courtId, t1, t2,
+      h.score ? `${h.score.a}-${h.score.b}` : '',
+      h.durationMs ? Math.round(h.durationMs / 60000) : ''
+    ]);
+  });
+  downloadCsv(`n1-games-${dateStamp()}.csv`, rows);
+}
 
 // ── Voice announcements (admin host device) ────────────
 const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
