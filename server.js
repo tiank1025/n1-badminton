@@ -268,6 +268,17 @@ io.on('connection', (socket) => {
     broadcast();
   });
 
+  // Admin pairs two waiting players into a partnership (overrides existing pairs).
+  socket.on('pair_players', ({ a, b }) => {
+    if (!socket.isAdmin) return;
+    a = sanitize(a); b = sanitize(b);
+    if (!a || !b || a === b) return;
+    if (!state.queue.includes(a) || !state.queue.includes(b)) return; // both must be waiting
+    cleanupPair(a); cleanupPair(b);
+    state.pairs[a] = b; state.pairs[b] = a;
+    broadcast();
+  });
+
   socket.on('add_court', () => {
     if (!socket.isAdmin) return;
     const allIds = [...EXTRA_COURT_IDS, ...INITIAL_COURT_IDS].sort((a, b) => a - b);

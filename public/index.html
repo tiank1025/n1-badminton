@@ -183,6 +183,7 @@
     .q-title { font-size:17px; font-weight:900; }
     .q-badge { background:var(--g100); color:var(--g800); font-size:12px; font-weight:700; padding:4px 11px; border-radius:20px; border:1px solid var(--g200); }
     .join-btn { background:linear-gradient(135deg,var(--g500),var(--g600)); color:white; border:none; cursor:pointer; padding:10px 20px; border-radius:11px; font-size:13px; font-weight:700; font-family:inherit; box-shadow:0 2px 8px rgba(22,163,74,0.3); transition:box-shadow 0.15s,transform 0.1s; }
+    .join-btn.alt { background:linear-gradient(135deg,#f59e0b,#d97706); box-shadow:0 2px 8px rgba(217,119,6,0.3); }
     .join-btn:hover { box-shadow:0 4px 14px rgba(22,163,74,0.4); }
     .join-btn:active { transform:scale(0.97); }
     .q-empty { text-align:center; color:var(--s400); font-size:14px; padding:44px 16px; }
@@ -272,7 +273,7 @@
     .mf-item.sel .mf-name { color:var(--g700); }
     .mf-counter { text-align:center; font-size:13px; color:var(--s500); margin-bottom:14px; }
     .mf-counter span { font-weight:700; color:var(--g700); }
-    #mf-list { max-height:45vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    #mf-list, #pair-list { max-height:45vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 
     /* ── Name error ── */
     .name-error { color:#ef4444; font-size:13px; margin:-8px 0 10px; display:none; }
@@ -411,7 +412,10 @@
         <span class="q-title">Waiting</span>
         <span class="q-badge" id="q-badge">0 players</span>
       </div>
-      <button class="join-btn" id="admin-add-btn" onclick="showJoinModal(true)" style="display:none">+ Add Player</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        <button class="join-btn alt" id="admin-pair-btn" onclick="showPairModal()" style="display:none">🔗 Pair</button>
+        <button class="join-btn" id="admin-add-btn" onclick="showJoinModal(true)" style="display:none">+ Add Player</button>
+      </div>
     </div>
     <div id="q-list"></div>
   </div>
@@ -466,6 +470,20 @@
     <div class="m-row" style="margin-top:4px">
       <button class="m-btn cancel" onclick="hideMfModal()">Cancel</button>
       <button class="m-btn ok" id="mf-confirm" onclick="submitMf()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pair Players Modal (admin) -->
+<div class="overlay" id="pair-modal" onclick="if(event.target===this)hidePairModal()">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title">Pair Players</div>
+    <div class="mf-counter" id="pair-counter"></div>
+    <div id="pair-list"></div>
+    <div class="m-row" style="margin-top:4px">
+      <button class="m-btn cancel" onclick="hidePairModal()">Cancel</button>
+      <button class="m-btn ok" id="pair-confirm" onclick="submitPair()">Pair</button>
     </div>
   </div>
 </div>
@@ -605,6 +623,7 @@ function renderAdminBtn() {
   document.getElementById('stats-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('announce-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('admin-add-btn').style.display = isAdmin ? '' : 'none';
+  document.getElementById('admin-pair-btn').style.display = isAdmin ? '' : 'none';
   document.getElementById('join-sticky').style.display = isAdmin ? 'none' : '';
   renderAnnounceBtn();
   document.querySelector('main').classList.toggle('admin-mode', isAdmin);
@@ -1015,6 +1034,43 @@ function submitMf() {
   if (!mfCourtId || mfSelected.size === 0) return;
   socket.emit(mfType === 'next' ? 'manual_assign_next' : 'manual_assign', { courtId:mfCourtId, names:[...mfSelected] });
   hideMfModal();
+}
+
+// ── Pair players (admin) ───────────────────────────────
+let pairSelected = new Set();
+function showPairModal() { if (!isAdmin) return; pairSelected = new Set(); renderPairList(); openModal('pair-modal'); }
+function hidePairModal() { closeModal('pair-modal'); }
+function togglePair(name) {
+  if (pairSelected.has(name)) pairSelected.delete(name);
+  else if (pairSelected.size < 2) pairSelected.add(name);
+  renderPairList();
+}
+function renderPairList() {
+  const remaining = 2 - pairSelected.size;
+  document.getElementById('pair-counter').innerHTML = remaining > 0
+    ? `Select <span>${remaining}</span> player${remaining !== 1 ? 's' : ''} to pair`
+    : `Ready to pair`;
+  document.getElementById('pair-confirm').disabled = pairSelected.size !== 2;
+  if (!state.queue.length) {
+    document.getElementById('pair-list').innerHTML = `<div class="stat-empty">No one waiting</div>`;
+    return;
+  }
+  document.getElementById('pair-list').innerHTML = state.queue.map(name => {
+    const sel = pairSelected.has(name); const full = !sel && pairSelected.size >= 2;
+    const partner = state.pairs?.[name];
+    return `<div class="mf-item${sel?' sel':''}${full?' disabled':''}" onclick="${full?'':`togglePair('${escJs(name)}')`}">
+      <div class="mf-check">${sel?'✓':''}</div>
+      <span class="mf-name">${esc(name)}</span>
+      ${lvlBadge(name)}
+      ${partner ? `<span class="pair-badge">🔗 ${esc(partner)}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+function submitPair() {
+  if (pairSelected.size !== 2) return;
+  const [a, b] = [...pairSelected];
+  socket.emit('pair_players', { a, b });
+  hidePairModal();
 }
 
 // ── Actions ────────────────────────────────────────────
