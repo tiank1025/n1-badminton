@@ -154,6 +154,18 @@ function arrForLoc(loc) {
   return null;
 }
 
+// Expand a base selection to also include each player's waiting partner.
+// Returns null if the resulting group can't fit in `spots` (would split a pair).
+function expandWithPartners(base, spots, occupied) {
+  const toAdd = new Set();
+  for (const n of base) {
+    toAdd.add(n);
+    const p = state.pairs[n];
+    if (p && state.queue.includes(p) && !occupied.has(p)) toAdd.add(p);
+  }
+  return toAdd.size > spots ? null : [...toAdd];
+}
+
 function smartFillInto(targetPlayers) {
   const needed = 4 - targetPlayers.length;
   if (needed <= 0 || state.queue.length === 0) return;
@@ -324,12 +336,14 @@ io.on('connection', (socket) => {
     courtId = Number(courtId);
     const court = state.courts[courtId];
     if (!court) return;
-    delete courtUndoSnapshots[courtId];
     const spots = 4 - court.players.length;
-    const toAdd = (names || []).map(n => sanitize(n))
-      .filter(n => n && state.queue.includes(n) && !court.players.includes(n))
-      .slice(0, spots);
-    if (toAdd.length === 0) return;
+    const occupied = new Set(court.players);
+    const base = [...new Set((names || []).map(n => sanitize(n))
+      .filter(n => n && state.queue.includes(n) && !occupied.has(n)))];
+    if (base.length === 0) return;
+    const toAdd = expandWithPartners(base, spots, occupied); // brings waiting partners
+    if (!toAdd) { socket.emit('assign_error', { reason: 'no_space' }); return; }
+    delete courtUndoSnapshots[courtId];
     const added = new Set(toAdd);
     state.queue = state.queue.filter(n => !added.has(n));
     toAdd.forEach(cleanupPair);
@@ -343,10 +357,12 @@ io.on('connection', (socket) => {
     const next = state.next[courtId];
     if (!next) return;
     const spots = 4 - next.players.length;
-    const toAdd = (names || []).map(n => sanitize(n))
-      .filter(n => n && state.queue.includes(n) && !next.players.includes(n))
-      .slice(0, spots);
-    if (toAdd.length === 0) return;
+    const occupied = new Set(next.players);
+    const base = [...new Set((names || []).map(n => sanitize(n))
+      .filter(n => n && state.queue.includes(n) && !occupied.has(n)))];
+    if (base.length === 0) return;
+    const toAdd = expandWithPartners(base, spots, occupied); // brings waiting partners
+    if (!toAdd) { socket.emit('assign_error', { reason: 'no_space' }); return; }
     const added = new Set(toAdd);
     state.queue = state.queue.filter(n => !added.has(n));
     toAdd.forEach(cleanupPair);

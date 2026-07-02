@@ -273,6 +273,7 @@
     .mf-item.sel .mf-name { color:var(--g700); }
     .mf-counter { text-align:center; font-size:13px; color:var(--s500); margin-bottom:14px; }
     .mf-counter span { font-weight:700; color:var(--g700); }
+    .mf-error { text-align:center; font-size:12px; color:#ef4444; margin:-6px 0 12px; font-weight:600; }
     #mf-list, #pair-list { max-height:45vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 
     /* ── Name error ── */
@@ -466,6 +467,7 @@
     <div class="m-handle"></div>
     <div class="m-title" id="mf-title">Pick Players</div>
     <div class="mf-counter" id="mf-counter"></div>
+    <div class="mf-error" id="mf-error" style="display:none"></div>
     <div id="mf-list"></div>
     <div class="m-row" style="margin-top:4px">
       <button class="m-btn cancel" onclick="hideMfModal()">Cancel</button>
@@ -1015,6 +1017,7 @@ function toggleMf(name) {
 }
 
 function renderMfList() {
+  const err = document.getElementById('mf-error'); if (err) err.style.display = 'none';
   const remaining = mfSpots - mfSelected.size;
   document.getElementById('mf-counter').innerHTML = `Select <span>${remaining}</span> more player${remaining!==1?'s':''}`;
   document.getElementById('mf-confirm').disabled = mfSelected.size === 0;
@@ -1032,9 +1035,25 @@ function renderMfList() {
 
 function submitMf() {
   if (!mfCourtId || mfSelected.size === 0) return;
+  const src = mfType === 'next' ? state.next[mfCourtId] : state.courts[mfCourtId];
+  if (!src) return;
+  const spots = 4 - src.players.length;
+  const occupied = new Set(src.players);
+  // Picking one of a pair auto-brings the waiting partner.
+  const expanded = new Set();
+  for (const n of mfSelected) {
+    expanded.add(n);
+    const p = state.pairs?.[n];
+    if (p && state.queue.includes(p) && !occupied.has(p)) expanded.add(p);
+  }
+  if (expanded.size > spots) {
+    showMfError(`Not enough space — this includes a paired partner (needs ${expanded.size}, ${spots} left). Free a slot or unpair first.`);
+    return;
+  }
   socket.emit(mfType === 'next' ? 'manual_assign_next' : 'manual_assign', { courtId:mfCourtId, names:[...mfSelected] });
   hideMfModal();
 }
+function showMfError(msg) { const e = document.getElementById('mf-error'); if (e) { e.textContent = msg; e.style.display = 'block'; } }
 
 // ── Pair players (admin) ───────────────────────────────
 let pairSelected = new Set();
@@ -1404,6 +1423,7 @@ function escJs(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); 
 function showNameError(msg) { const el=document.getElementById('name-error'); el.textContent=msg; el.style.display='block'; document.getElementById('name-input').style.borderColor='#ef4444'; document.getElementById('name-input').focus(); }
 function clearNameError()   { document.getElementById('name-error').style.display='none'; document.getElementById('name-input').style.borderColor=''; }
 
+socket.on('assign_error', ({ reason }) => { if (reason === 'no_space') showMfError('Not enough space to include the paired partner.'); });
 socket.on('join_success', () => hideJoinModal());
 socket.on('join_error', ({ reason, name }) => { if (reason==='name_taken') showNameError(`"${name}" is already in use. Please use a different name.`); });
 
