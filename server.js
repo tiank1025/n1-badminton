@@ -22,6 +22,10 @@ const state = {
   queue:   [],
   players: {},
   pairs:   {},
+  // Canonical pair key (JSON of sorted [a,b]) -> true means "force paired":
+  // the pair survives games and is never auto-dissolved. Absent = casual pair,
+  // which auto-unbinds after the two players finish one game together.
+  stickyPairs: {},
   history: [],
 };
 
@@ -45,6 +49,7 @@ function loadState() {
       if (Array.isArray(saved.queue))                  state.queue   = saved.queue;
       if (saved.players && typeof saved.players === 'object') state.players = saved.players;
       if (saved.pairs   && typeof saved.pairs   === 'object') state.pairs   = saved.pairs;
+      if (saved.stickyPairs && typeof saved.stickyPairs === 'object') state.stickyPairs = saved.stickyPairs;
       if (Array.isArray(saved.history))                state.history = saved.history;
       // Heal any missing court/on-deck entries so the rest of the code is safe.
       INITIAL_COURT_IDS.forEach(id => { if (!state.next[id]) state.next[id] = { players: [] }; });
@@ -126,9 +131,29 @@ function shiftNextSlots() {
   });
 }
 
+// Canonical, collision-free key for an unordered pair of names.
+function pairKey(a, b) { return JSON.stringify([a, b].sort()); }
+function isStickyPair(a, b) { return !!state.stickyPairs[pairKey(a, b)]; }
+function setPairSticky(a, b, sticky) {
+  const k = pairKey(a, b);
+  if (sticky) state.stickyPairs[k] = true;
+  else delete state.stickyPairs[k];
+}
+
+// Write a bidirectional pair edge (replacing any existing pair on either side)
+// and record whether it is a force-paired (sticky) pair.
+function linkPair(a, b, sticky) {
+  cleanupPair(a);
+  cleanupPair(b);
+  state.pairs[a] = b;
+  state.pairs[b] = a;
+  setPairSticky(a, b, !!sticky);
+}
+
 function cleanupPair(name) {
   const partner = state.pairs[name];
   if (partner) {
+    delete state.stickyPairs[pairKey(name, partner)];
     delete state.pairs[name];
     if (state.pairs[partner] === name) delete state.pairs[partner];
   }
@@ -238,7 +263,7 @@ io.on('connection', (socket) => {
 
   socket.on('admin_logout', () => { socket.isAdmin = false; });
 
-  socket.on('join_queue', ({ name, level, partner }) => {
+  socket.on('join_queue', ({ name, level, partner, sticky }) => {
     name = sanitize(name);
     partner = sanitize(partner || '');
     if (!name) return;
@@ -246,48 +271,43 @@ io.on('connection', (socket) => {
     if (!LEVELS.includes(level)) return;
     state.players[name] = level;
     state.queue.push(name);
-    if (partner && partner !== name) {
-      state.pairs[name] = partner;
-      if (state.pairs[partner] === name) {
-        // already mutual — confirmed
+    // Partner must already be waiting. `sticky` = keep the pair together for the
+    // whole session; otherwise it auto-dissolves after their first game together.
+    // First-pair priority: a partner who is already in an earlier pair cannot be
+    // claimed away — the new player joins solo instead. (Admins can still re-pair.)
+    let pairDeclined = null;
+    if (partner && partner !== name && state.queue.includes(partner)) {
+      if (state.pairs[partner]) {
+        pairDeclined = { partner, pairedWith: state.pairs[partner] };
       } else {
-        state.pairs[partner] = name;
+        linkPair(name, partner, !!sticky);
       }
     }
-    socket.emit('join_success');
+    socket.emit('join_success', { pairDeclined });
     broadcast();
   });
 
   socket.on('remove_from_queue', (name) => {
     name = sanitize(name);
     state.queue = state.queue.filter(n => n !== name);
-    const partner = state.pairs[name];
-    if (partner) {
-      delete state.pairs[name];
-      if (state.pairs[partner] === name) delete state.pairs[partner];
-    }
+    cleanupPair(name); // also clears the sticky flag
     broadcast();
   });
 
   socket.on('unlink_pair', (name) => {
     if (!socket.isAdmin) return;
     name = sanitize(name);
-    const partner = state.pairs[name];
-    if (partner) {
-      delete state.pairs[name];
-      if (state.pairs[partner] === name) delete state.pairs[partner];
-    }
+    cleanupPair(name); // also clears the sticky flag
     broadcast();
   });
 
   // Admin pairs two waiting players into a partnership (overrides existing pairs).
-  socket.on('pair_players', ({ a, b }) => {
+  socket.on('pair_players', ({ a, b, sticky }) => {
     if (!socket.isAdmin) return;
     a = sanitize(a); b = sanitize(b);
     if (!a || !b || a === b) return;
     if (!state.queue.includes(a) || !state.queue.includes(b)) return; // both must be waiting
-    cleanupPair(a); cleanupPair(b);
-    state.pairs[a] = b; state.pairs[b] = a;
+    linkPair(a, b, !!sticky);
     broadcast();
   });
 
@@ -345,8 +365,8 @@ io.on('connection', (socket) => {
     if (!toAdd) { socket.emit('assign_error', { reason: 'no_space' }); return; }
     delete courtUndoSnapshots[courtId];
     const added = new Set(toAdd);
+    // Keep the pair intact — casual pairs unbind after the game, sticky pairs stay.
     state.queue = state.queue.filter(n => !added.has(n));
-    toAdd.forEach(cleanupPair);
     court.players.push(...toAdd);
     broadcast();
   });
@@ -365,8 +385,7 @@ io.on('connection', (socket) => {
     if (!toAdd) { socket.emit('assign_error', { reason: 'no_space' }); return; }
     const added = new Set(toAdd);
     state.queue = state.queue.filter(n => !added.has(n));
-    toAdd.forEach(cleanupPair);
-    next.players.push(...toAdd);
+    next.players.push(...toAdd); // pair stays bound until the game is over
     broadcast();
   });
 
@@ -378,8 +397,7 @@ io.on('connection', (socket) => {
     if (!court || court.players.length >= 4 || court.players.includes(name)) return;
     delete courtUndoSnapshots[courtId];
     state.queue = state.queue.filter(n => n !== name);
-    cleanupPair(name);
-    court.players.push(name);
+    court.players.push(name); // pair is not broken by scheduling moves
     broadcast();
   });
 
@@ -422,13 +440,11 @@ io.on('connection', (socket) => {
       state.next[from.id].players = state.next[from.id].players.filter(n => n !== name);
     }
 
-    // Add to destination
+    // Add to destination (pair binding is unaffected by drag-and-drop moves)
     if (toType === 'court') {
-      cleanupPair(name);
       state.courts[toId].players.push(name);
       delete courtUndoSnapshots[toId];
     } else if (toType === 'next') {
-      cleanupPair(name);
       state.next[toId].players.push(name);
     } else if (toType === 'queue') {
       state.queue.push(name);
@@ -477,7 +493,7 @@ io.on('connection', (socket) => {
     const wasIn = next.players.includes(name);
     next.players = next.players.filter(n => n !== name);
     if (wasIn) {
-      cleanupPair(name);
+      // Back to the queue without playing — keep any pair binding intact.
       state.queue = [name, ...state.queue];
     }
     broadcast();
@@ -508,8 +524,7 @@ io.on('connection', (socket) => {
     if (!next || next.players.length === 0) return;
     const players = [...next.players];
     next.players = [];
-    players.forEach(cleanupPair);
-    state.queue = [...players, ...state.queue];
+    state.queue = [...players, ...state.queue]; // sent back without playing: pairs persist
     broadcast();
   });
 
@@ -526,7 +541,8 @@ io.on('connection', (socket) => {
     const court = state.courts[courtId];
     if (!court) return;
     if (court.players.length > 0) {
-      courtUndoSnapshots[courtId] = { type: 'end_game', players: [...court.players], wasPlaying: court.playing };
+      const snap = { type: 'end_game', players: [...court.players], wasPlaying: court.playing };
+      courtUndoSnapshots[courtId] = snap;
       // Store players in team order (team1 first, team2 next) if a valid split is given.
       let ordered = [...court.players];
       if (Array.isArray(teams) && teams.length === 2
@@ -546,6 +562,19 @@ io.on('connection', (socket) => {
       }
       state.history.unshift(entry);
       if (state.history.length > 100) state.history.pop();
+
+      // Casual (non-sticky) pairs that just finished a game TOGETHER are
+      // auto-unbound now. Sticky pairs stay paired for the whole session.
+      // The unbound pairs are saved in the undo snapshot so "Undo End" restores them.
+      const onCourt = new Set(court.players);
+      snap.pairsToRestore = [];
+      court.players.forEach(p => {
+        const partner = state.pairs[p];
+        if (partner && partner !== p && onCourt.has(partner) && !isStickyPair(p, partner)) {
+          snap.pairsToRestore.push([p, partner]);
+          cleanupPair(p); // removes both edges; the partner's iteration becomes a no-op
+        }
+      });
     }
     if (toQueue) state.queue.push(...court.players);
     court.players = [];
@@ -568,6 +597,11 @@ io.on('connection', (socket) => {
       state.queue = state.queue.filter(n => !snapSet.has(n));
       court.players = [...snap.players];
       court.playing = snap.wasPlaying;
+      // Restore casual pairs auto-dissolved at end-game, unless the players were
+      // re-paired manually in the meantime.
+      (snap.pairsToRestore || []).forEach(([a, b]) => {
+        if (!state.pairs[a] && !state.pairs[b]) { state.pairs[a] = b; state.pairs[b] = a; }
+      });
     } else if (snap.type === 'promote') {
       if (court.playing) return;
       const snapSet = new Set(snap.players);
@@ -589,6 +623,7 @@ io.on('connection', (socket) => {
     state.queue   = [];
     state.players = {};
     state.pairs   = {};
+    state.stickyPairs = {};
     state.history = [];
     Object.keys(courtUndoSnapshots).forEach(k => delete courtUndoSnapshots[k]);
     broadcast();

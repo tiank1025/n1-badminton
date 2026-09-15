@@ -211,6 +211,14 @@
 
     /* ── Pair badge ── */
     .pair-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; background:#fef9c3; color:#854d0e; border:1px solid #fde047; white-space:nowrap; flex-shrink:0; }
+    .pair-badge.sticky { background:#dbeafe; color:#1e40af; border-color:#93c5fd; }
+
+    /* ── Force-pair toggle ── */
+    .sticky-row { display:flex; align-items:center; gap:9px; padding:11px 13px; border:2px solid var(--s200); border-radius:12px; background:var(--s50); margin-bottom:6px; font-size:13px; font-weight:700; color:var(--s700); cursor:pointer; user-select:none; transition:border-color 0.15s,background 0.15s; }
+    .sticky-row:hover { border-color:var(--s400); }
+    .sticky-row.on { border-color:#60a5fa; background:#eff6ff; color:#1e40af; }
+    .sticky-row input { width:17px; height:17px; accent-color:#2563eb; flex-shrink:0; cursor:pointer; }
+    .sticky-hint { font-size:11px; color:var(--s400); margin:0 2px 14px; line-height:1.45; }
 
     /* ── Modals ── */
     .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(2px); display:flex; align-items:flex-end; justify-content:center; z-index:50; opacity:0; pointer-events:none; transition:opacity 0.2s; }
@@ -260,6 +268,7 @@
     .partner-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--s100); transition:background 0.12s; user-select:none; }
     .partner-item:last-child { border-bottom:none; }
     .partner-item:hover { background:var(--g50); }
+    .partner-item.disabled:hover { background:transparent; }
     .partner-item-name { flex:1; font-size:14px; font-weight:600; color:var(--s700); }
     .partner-none { color:var(--s400); font-size:13px; }
 
@@ -443,6 +452,13 @@
     <div class="lvl-section-label" style="margin-top:4px">Play with (optional)</div>
     <div class="partner-selector" id="partner-selector" onclick="togglePartnerDrop()"></div>
     <div class="partner-list" id="partner-list" style="display:none;margin-top:6px"></div>
+    <div id="sticky-wrap" style="display:none">
+      <label class="sticky-row" id="sticky-row">
+        <input type="checkbox" id="sticky-input" onchange="onStickyToggle()">
+        <span>🔒 Force pair — stay together all session</span>
+      </label>
+      <div class="sticky-hint" id="sticky-hint">Off (default): you two are queued together, then the pair automatically ends after your first game. On: you stay paired all session until an admin unpairs you.</div>
+    </div>
     <div class="m-row">
       <button class="m-btn cancel" onclick="hideJoinModal()">Cancel</button>
       <button class="m-btn ok" onclick="submitJoin()">Join</button>
@@ -482,6 +498,10 @@
     <div class="m-handle"></div>
     <div class="m-title">Pair Players</div>
     <div class="mf-counter" id="pair-counter"></div>
+    <label class="sticky-row" id="pair-sticky-row" style="margin-bottom:12px">
+      <input type="checkbox" id="pair-sticky" onchange="document.getElementById('pair-sticky-row').classList.toggle('on', this.checked)">
+      <span>🔒 Force pair — stay together all session</span>
+    </label>
     <div id="pair-list"></div>
     <div class="m-row" style="margin-top:4px">
       <button class="m-btn cancel" onclick="hidePairModal()">Cancel</button>
@@ -584,7 +604,7 @@ const LEVEL_COLORS = {
   'beginner'    : '#f59e0b',
 };
 
-let state = { courts:{}, next:{}, queue:[], players:{}, history:[] };
+let state = { courts:{}, next:{}, queue:[], players:{}, pairs:{}, stickyPairs:{}, history:[] };
 let myName  = localStorage.getItem('bmt_name')  || '';
 let myLevel = localStorage.getItem('bmt_level') || '';
 let adminPin = localStorage.getItem('bmt_admin_pin') || '';
@@ -817,7 +837,7 @@ function renderQueue() {
       <span class="q-pos${i<4?' next':''}">${i+1}</span>
       <span class="q-name${me?' me':''}" title="${esc(name)}">${esc(name)}${me?' ★':''}</span>
       ${lvlBadge(name, isAdmin)}
-      ${partner ? `<span class="pair-badge" title="Paired with ${esc(partner)}">🔗 ${esc(partner)}</span>` : ''}
+      ${pairBadgeHtml(name)}
       <div class="q-actions">
         ${isAdmin && partner ? `<button class="q-rm-btn" onclick="socket.emit('unlink_pair','${escJs(name)}')" title="Break pair" style="font-size:14px">✂️</button>` : ''}
         ${isAdmin && avail.length ? `<button class="q-assign-btn" onclick="showAssignModal('${escJs(name)}')" title="Assign to court">⬆</button>` : ''}
@@ -885,6 +905,17 @@ function lvlBadge(name, editable = false) {
   return `<span class="lvl" style="background:${col}" title="${lvl}"></span>`;
 }
 
+// ── Pair badge helpers ─────────────────────────────────
+function pairKeyOf(a, b) { return JSON.stringify([a, b].sort()); }
+function isStickyPair(a, b) { return !!state.stickyPairs?.[pairKeyOf(a, b)]; }
+function pairBadgeHtml(name) {
+  const partner = state.pairs?.[name];
+  if (!partner) return '';
+  const sticky = isStickyPair(name, partner);
+  const tip = sticky ? 'Force-paired all session' : 'Paired — auto-unbinds after first game';
+  return `<span class="pair-badge${sticky ? ' sticky' : ''}" title="${esc(partner)} · ${tip}">${sticky ? '🔒' : '🔗'} ${esc(partner)}</span>`;
+}
+
 function renderLvlPicker() {
   document.getElementById('lvl-picker').innerHTML = LEVELS.map(l => {
     const col = LEVEL_COLORS[l]; const sel = l === modalLevel;
@@ -903,8 +934,20 @@ function selectLevel(l) {
 
 // ── Join ───────────────────────────────────────────────
 let myPartner = null, partnerDropOpen = false;
+let mySticky = false;     // force-pair: stay together all session
 let modalLevel = '';      // level selected in the open Join modal
 let adminAddMode = false; // admin adding someone else (don't overwrite my identity)
+
+function renderStickyToggle() {
+  document.getElementById('sticky-wrap').style.display = myPartner ? '' : 'none';
+  const input = document.getElementById('sticky-input');
+  input.checked = mySticky;
+  document.getElementById('sticky-row').classList.toggle('on', mySticky);
+}
+function onStickyToggle() {
+  mySticky = document.getElementById('sticky-input').checked;
+  document.getElementById('sticky-row').classList.toggle('on', mySticky);
+}
 
 function renderPartnerSelector() {
   const sel  = document.getElementById('partner-selector');
@@ -934,22 +977,34 @@ function renderPartnerItems() {
   let others = state.queue.filter(n => n !== myNameVal);
   if (q) others = others.filter(n => n.toLowerCase().includes(q));
   cont.innerHTML = others.length
-    ? others.map(n => `<div class="partner-item" onclick="selectPartner('${escJs(n)}')"><span class="partner-item-name">${esc(n)}</span>${lvlBadge(n)}</div>`).join('')
+    ? others.map(n => {
+        // First-pair priority: someone already paired can't be picked here
+        // (admins can still re-pair via the admin Pair tool).
+        const taken = state.pairs?.[n];
+        if (taken) {
+          const sticky = isStickyPair(n, taken);
+          return `<div class="partner-item disabled" style="opacity:0.45;cursor:default">
+            <span class="partner-item-name">${esc(n)} <span style="color:var(--s400);font-weight:500;font-size:12px">· already paired</span></span>
+            <span style="font-size:11px;font-weight:700;color:var(--s400)">${sticky ? '🔒' : '🔗'} ${esc(taken)}</span>
+          </div>`;
+        }
+        return `<div class="partner-item" onclick="selectPartner('${escJs(n)}')"><span class="partner-item-name">${esc(n)}</span>${lvlBadge(n)}</div>`;
+      }).join('')
     : `<div class="partner-item"><span class="partner-none">${q ? 'No match' : 'No one in queue yet'}</span></div>`;
 }
 
 function togglePartnerDrop() { partnerDropOpen = !partnerDropOpen; renderPartnerSelector(); }
-function selectPartner(name) { myPartner = name; partnerDropOpen = false; renderPartnerSelector(); }
+function selectPartner(name) { myPartner = name; partnerDropOpen = false; renderPartnerSelector(); renderStickyToggle(); }
 
 function showJoinModal(adminAdd = false) {
   adminAddMode = !!adminAdd;
   document.getElementById('name-input').value = adminAddMode ? '' : (myName || '');
   modalLevel = adminAddMode ? '' : (myLevel || '');
-  myPartner = null; partnerDropOpen = false;
+  myPartner = null; partnerDropOpen = false; mySticky = false;
   document.getElementById('join-title').textContent = adminAddMode ? 'Add Player' : 'Join Queue';
   document.getElementById('join-sub').textContent   = adminAddMode ? 'Add someone to the waitlist' : 'Enter your name to join';
   clearNameError();
-  renderLvlPicker(); renderPartnerSelector();
+  renderLvlPicker(); renderPartnerSelector(); renderStickyToggle();
   openModal('join-modal');
   setTimeout(() => document.getElementById('name-input').focus(), 250);
 }
@@ -969,7 +1024,7 @@ function submitJoin() {
     myName = name; localStorage.setItem('bmt_name', name);
     myLevel = modalLevel; localStorage.setItem('bmt_level', modalLevel);
   }
-  socket.emit('join_queue', { name, level: modalLevel, partner: myPartner || '' });
+  socket.emit('join_queue', { name, level: modalLevel, partner: myPartner || '', sticky: !!(myPartner && mySticky) });
 }
 
 // ── Assign ─────────────────────────────────────────────
@@ -1028,7 +1083,7 @@ function renderMfList() {
       <div class="mf-check">${sel?'✓':''}</div>
       <span class="mf-name">${esc(name)}</span>
       ${lvlBadge(name)}
-      ${partner ? `<span class="pair-badge">🔗 ${esc(partner)}</span>` : ''}
+      ${pairBadgeHtml(name)}
     </div>`;
   }).join('');
 }
@@ -1057,7 +1112,15 @@ function showMfError(msg) { const e = document.getElementById('mf-error'); if (e
 
 // ── Pair players (admin) ───────────────────────────────
 let pairSelected = new Set();
-function showPairModal() { if (!isAdmin) return; pairSelected = new Set(); renderPairList(); openModal('pair-modal'); }
+function showPairModal() {
+  if (!isAdmin) return;
+  pairSelected = new Set();
+  const sticky = document.getElementById('pair-sticky');
+  sticky.checked = false;
+  document.getElementById('pair-sticky-row').classList.remove('on');
+  renderPairList();
+  openModal('pair-modal');
+}
 function hidePairModal() { closeModal('pair-modal'); }
 function togglePair(name) {
   if (pairSelected.has(name)) pairSelected.delete(name);
@@ -1081,14 +1144,15 @@ function renderPairList() {
       <div class="mf-check">${sel?'✓':''}</div>
       <span class="mf-name">${esc(name)}</span>
       ${lvlBadge(name)}
-      ${partner ? `<span class="pair-badge">🔗 ${esc(partner)}</span>` : ''}
+      ${pairBadgeHtml(name)}
     </div>`;
   }).join('');
 }
 function submitPair() {
   if (pairSelected.size !== 2) return;
   const [a, b] = [...pairSelected];
-  socket.emit('pair_players', { a, b });
+  const sticky = document.getElementById('pair-sticky').checked;
+  socket.emit('pair_players', { a, b, sticky });
   hidePairModal();
 }
 
@@ -1424,7 +1488,13 @@ function showNameError(msg) { const el=document.getElementById('name-error'); el
 function clearNameError()   { document.getElementById('name-error').style.display='none'; document.getElementById('name-input').style.borderColor=''; }
 
 socket.on('assign_error', ({ reason }) => { if (reason === 'no_space') showMfError('Not enough space to include the paired partner.'); });
-socket.on('join_success', () => hideJoinModal());
+socket.on('join_success', ({ pairDeclined } = {}) => {
+  hideJoinModal();
+  // The requested partner was already in an earlier pair; player joined solo.
+  if (pairDeclined) {
+    alert(`${pairDeclined.partner} is already paired with ${pairDeclined.pairedWith}. You joined the queue solo — ask an admin if the pairing needs to change.`);
+  }
+});
 socket.on('join_error', ({ reason, name }) => { if (reason==='name_taken') showNameError(`"${name}" is already in use. Please use a different name.`); });
 
 // Keep the sticky Join button parked right below the (responsive) header.
