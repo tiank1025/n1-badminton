@@ -22,7 +22,7 @@ const state = {
   queue:   [],
   players: {},
   pairs:   {},
-  // Canonical pair key (JSON of sorted [a,b]) -> true means "force paired":
+  // Canonical pair key (JSON of sorted [a,b]) -> true means "LOCK pair":
   // the pair survives games and is never auto-dissolved. Absent = casual pair,
   // which auto-unbinds after the two players finish one game together.
   stickyPairs: {},

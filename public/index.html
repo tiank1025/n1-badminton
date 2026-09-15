@@ -213,7 +213,7 @@
     .pair-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; background:#fef9c3; color:#854d0e; border:1px solid #fde047; white-space:nowrap; flex-shrink:0; }
     .pair-badge.sticky { background:#dbeafe; color:#1e40af; border-color:#93c5fd; }
 
-    /* ── Force-pair toggle ── */
+    /* ── LOCK-pair toggle ── */
     .sticky-row { display:flex; align-items:center; gap:9px; padding:11px 13px; border:2px solid var(--s200); border-radius:12px; background:var(--s50); margin-bottom:6px; font-size:13px; font-weight:700; color:var(--s700); cursor:pointer; user-select:none; transition:border-color 0.15s,background 0.15s; }
     .sticky-row:hover { border-color:var(--s400); }
     .sticky-row.on { border-color:#60a5fa; background:#eff6ff; color:#1e40af; }
@@ -455,7 +455,7 @@
     <div id="sticky-wrap" style="display:none">
       <label class="sticky-row" id="sticky-row">
         <input type="checkbox" id="sticky-input" onchange="onStickyToggle()">
-        <span>🔒 Force pair — stay together all session</span>
+        <span>🔒 LOCK pair — stay together all session</span>
       </label>
       <div class="sticky-hint" id="sticky-hint">Off (default): you two are queued together, then the pair automatically ends after your first game. On: you stay paired all session until an admin unpairs you.</div>
     </div>
@@ -500,7 +500,7 @@
     <div class="mf-counter" id="pair-counter"></div>
     <label class="sticky-row" id="pair-sticky-row" style="margin-bottom:12px">
       <input type="checkbox" id="pair-sticky" onchange="document.getElementById('pair-sticky-row').classList.toggle('on', this.checked)">
-      <span>🔒 Force pair — stay together all session</span>
+      <span>🔒 LOCK pair — stay together all session</span>
     </label>
     <div id="pair-list"></div>
     <div class="m-row" style="margin-top:4px">
@@ -912,7 +912,7 @@ function pairBadgeHtml(name) {
   const partner = state.pairs?.[name];
   if (!partner) return '';
   const sticky = isStickyPair(name, partner);
-  const tip = sticky ? 'Force-paired all session' : 'Paired — auto-unbinds after first game';
+  const tip = sticky ? 'LOCK-paired all session' : 'Paired — auto-unbinds after first game';
   return `<span class="pair-badge${sticky ? ' sticky' : ''}" title="${esc(partner)} · ${tip}">${sticky ? '🔒' : '🔗'} ${esc(partner)}</span>`;
 }
 
@@ -934,7 +934,7 @@ function selectLevel(l) {
 
 // ── Join ───────────────────────────────────────────────
 let myPartner = null, partnerDropOpen = false;
-let mySticky = false;     // force-pair: stay together all session
+let mySticky = false;     // LOCK pair: stay together all session
 let modalLevel = '';      // level selected in the open Join modal
 let adminAddMode = false; // admin adding someone else (don't overwrite my identity)
 
