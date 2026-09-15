@@ -191,53 +191,111 @@ function expandWithPartners(base, spots, occupied) {
   return toAdd.size > spots ? null : [...toAdd];
 }
 
+// Unordered key for a pair of player names (co-play history memory).
+function edgeKey(a, b) { return [a, b].sort().join(' '); }
+
+// Set of player-pairs that have already shared a court in recorded history.
+function buildCoPlayedSet() {
+  const s = new Set();
+  state.history.forEach(h => {
+    const p = h.players || [];
+    for (let i = 0; i < p.length; i++)
+      for (let j = i + 1; j < p.length; j++)
+        s.add(edgeKey(p[i], p[j]));
+  });
+  return s;
+}
+
+// Auto-fill by choosing from the ENTIRE waitlist — queue position is only a
+// final tie-break. Selection priorities (lexicographic):
+//   1) fill as many open spots as possible; bound pairs are atomic 2-player units
+//   2) prefer groups whose level spread is within one tier (relaxed if impossible)
+//   3) maximise fresh matchups — players who have NEVER shared a court before
+//   4) then tighter level spread, then longest-waiting players on ties
 function smartFillInto(targetPlayers) {
   const needed = 4 - targetPlayers.length;
   if (needed <= 0 || state.queue.length === 0) return;
 
-  const pool = [...state.queue];
-  const chosen = [];
+  const queuePos = new Map(state.queue.map((n, i) => [n, i]));
 
-  function getUnit(name) {
+  // Build scheduling units from the whole queue: a pair whose partner is also
+  // waiting forms one indivisible unit; everyone else is a single.
+  const units = [];
+  const consumed = new Set();
+  state.queue.forEach(name => {
+    if (consumed.has(name)) return;
     const partner = state.pairs[name];
-    if (partner && pool.includes(partner)) return [name, partner];
-    return [name];
-  }
-
-  function removeFromPool(...names) {
-    names.forEach(n => { const i = pool.indexOf(n); if (i !== -1) pool.splice(i, 1); });
-  }
-
-  while (chosen.length < needed && pool.length > 0) {
-    const lvls = chosen.map(lvlIdx);
-    const minL = chosen.length ? Math.min(...lvls) : null;
-    const maxL = chosen.length ? Math.max(...lvls) : null;
-
-    let foundUnit = null;
-
-    for (const name of pool) {
-      const unit = getUnit(name);
-      if (chosen.length + unit.length > needed) continue;
-      if (chosen.length === 0) { foundUnit = unit; break; }
-      const uLvls = unit.map(lvlIdx);
-      if (Math.max(maxL, ...uLvls) - Math.min(minL, ...uLvls) <= 1) { foundUnit = unit; break; }
+    if (partner && partner !== name && queuePos.has(partner) && !consumed.has(partner)) {
+      units.push({
+        players: [name, partner],
+        size: 2,
+        order: Math.min(queuePos.get(name), queuePos.get(partner)),
+      });
+      consumed.add(name); consumed.add(partner);
+    } else {
+      units.push({ players: [name], size: 1, order: queuePos.get(name) });
+      consumed.add(name);
     }
+  });
+  // Units larger than the open spots can never be picked; the rest are explored
+  // in queue order so equal-score combinations favour longer-waiting players.
+  const fitting = units.filter(u => u.size <= needed)
+                       .sort((a, b) => a.order - b.order);
 
-    if (!foundUnit) {
-      for (const name of pool) {
-        const unit = getUnit(name);
-        if (chosen.length + unit.length <= needed) { foundUnit = unit; break; }
+  const coPlayed = buildCoPlayedSet();
+  const fixed = [...targetPlayers];
+
+  function score(extra) {
+    const group = fixed.concat(extra);
+    const lvls = group.map(lvlIdx);
+    const spread = group.length ? Math.max(...lvls) - Math.min(...lvls) : Infinity;
+    // Repeated matchups are counted on cross-unit edges only. Edges inside a
+    // currently bound pair are mandatory, so they don't count against freshness.
+    let edges = 0, repeats = 0;
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        if (state.pairs[group[i]] === group[j]) continue;
+        edges++;
+        if (coPlayed.has(edgeKey(group[i], group[j]))) repeats++;
       }
     }
-
-    if (!foundUnit) break;
-    removeFromPool(...foundUnit);
-    chosen.push(...foundUnit);
+    return {
+      unfilled: needed - extra.length,
+      spreadBucket: spread <= 1 ? 0 : 1, // strong preference, relaxed via ranking
+      repeatRate: edges ? repeats / edges : 0,
+      spread,
+    };
   }
 
-  const chosenSet = new Set(chosen);
-  state.queue = state.queue.filter(n => !chosenSet.has(n));
-  targetPlayers.push(...chosen);
+  function better(c, b) {
+    return c.unfilled < b.unfilled
+      || (c.unfilled === b.unfilled && c.spreadBucket < b.spreadBucket)
+      || (c.unfilled === b.unfilled && c.spreadBucket === b.spreadBucket && c.repeatRate < b.repeatRate)
+      || (c.unfilled === b.unfilled && c.spreadBucket === b.spreadBucket
+          && c.repeatRate === b.repeatRate && c.spread < b.spread);
+  }
+
+  let best = null;
+  // Enumerate every feasible unit combination (total unit size <= needed).
+  // A group contains at most `needed` (<=4) singles, so the search stays small.
+  (function dfs(start, acc, size) {
+    const s = score(acc);
+    if (!best || better(s, best.s)) best = { s, players: [...acc] };
+    for (let i = start; i < fitting.length; i++) {
+      const u = fitting[i];
+      if (size + u.size <= needed) {
+        acc.push(...u.players);
+        dfs(i + 1, acc, size + u.size);
+        acc.length -= u.size;
+      }
+    }
+  })(0, [], 0);
+
+  if (best && best.players.length) {
+    const chosenSet = new Set(best.players);
+    state.queue = state.queue.filter(n => !chosenSet.has(n));
+    targetPlayers.push(...best.players);
+  }
 }
 
 io.on('connection', (socket) => {
