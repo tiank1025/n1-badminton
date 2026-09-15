@@ -834,7 +834,7 @@ function renderQueue() {
     const partner = state.pairs?.[name];
     const dragAttrs = isAdmin ? ` draggable="true" ondragstart="onDragStart(event,'${escJs(name)}')" ondragend="onDragEnd(event)"` : '';
     return `<div class="q-item${me?' me':''}"${dragAttrs}>
-      <span class="q-pos${i<4?' next':''}">${i+1}</span>
+      ${isAdmin ? `<span class="q-pos${i<4?' next':''}">${i+1}</span>` : ''}
       <span class="q-name${me?' me':''}" title="${esc(name)}">${esc(name)}${me?' ★':''}</span>
       ${lvlBadge(name, isAdmin)}
       ${pairBadgeHtml(name)}
