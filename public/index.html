@@ -672,7 +672,7 @@ function renderSummary() {
   if (live)  html += `<span class="sec-chip on">● ${live} Live</span>`;
   if (ready) html += `<span class="sec-chip">◎ ${ready} Ready</span>`;
   if (idle)  html += `<span class="sec-chip">○ ${idle} Idle</span>`;
-  if (q)     html += `<span class="sec-chip">⏳ ${q} in queue</span>`;
+  if (q && isAdmin) html += `<span class="sec-chip">⏳ ${q} in queue</span>`;
   document.getElementById('court-summary').innerHTML = html;
 }
 
@@ -823,7 +823,12 @@ function onDeckEtaMin(slotId) {
 function renderQueue() {
   const badge = document.getElementById('q-badge');
   const list  = document.getElementById('q-list');
-  badge.textContent = `${state.queue.length} players`;
+  if (isAdmin) {
+    badge.style.display = '';
+    badge.textContent = `${state.queue.length} players`;
+  } else {
+    badge.style.display = 'none';
+  }
   if (!state.queue.length) {
     list.innerHTML = `<div class="q-empty"><div class="q-empty-icon">🏸</div><div>No one waiting</div><div class="q-empty-hint">Tap "Join Queue" to start</div></div>`;
     return;
