@@ -108,7 +108,10 @@
     .sec-add-btn { margin-left:auto; flex-shrink:0; background:white; border:1.5px solid var(--g500); color:var(--g700); cursor:pointer; border-radius:8px; padding:3px 11px; font-size:11px; font-weight:700; font-family:inherit; transition:background 0.15s,color 0.15s; }
     .sec-add-btn:hover { background:var(--g500); color:white; }
 
-    .courts-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:26px; }
+    /* Phones get one column: a court card needs ~240px for its two player
+       cells (name + level dot + remove), so two columns clip on <480px. */
+    .courts-grid { display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:26px; }
+    @media(min-width:480px) { .courts-grid { grid-template-columns:repeat(2,1fr); } }
     @media(min-width:560px) { .courts-grid { grid-template-columns:repeat(3,1fr); } }
     @media(min-width:900px) { .courts-grid { grid-template-columns:repeat(5,1fr); } }
 
@@ -144,19 +147,19 @@
     .court-rm-btn { background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); color:rgba(255,255,255,0.85); cursor:pointer; border-radius:6px; padding:1px 7px; font-size:15px; font-weight:700; line-height:1.4; font-family:inherit; margin-left:auto; transition:background 0.15s; }
     .court-rm-btn:hover { background:rgba(220,38,38,0.5); color:white; }
 
-    .p-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:10px 12px; flex:1; }
-    .p-cell { border-radius:11px; padding:7px 9px; display:flex; align-items:center; justify-content:space-between; min-height:38px; }
+    .p-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; padding:10px 12px; flex:1; }
+    .p-cell { border-radius:11px; padding:7px 9px; display:flex; align-items:center; justify-content:space-between; min-height:38px; min-width:0; }
     .p-cell.filled { background:var(--g50); border:1.5px solid var(--g200); }
     .p-cell.filled.me { background:var(--g100); border-color:var(--g500); }
     .p-cell.empty { background:var(--s50); border:1.5px dashed var(--s200); justify-content:center; }
     .p-name { font-size:12px; font-weight:700; color:var(--s700); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:58px; }
     .p-name.me { color:var(--g700); }
     .p-empty-txt { font-size:11px; color:var(--s300,#cbd5e1); }
-    .p-rm { border:none; background:none; cursor:pointer; color:var(--s300,#cbd5e1); font-size:16px; line-height:1; padding:0 0 0 4px; border-radius:4px; transition:color 0.15s; flex-shrink:0; }
+    .p-rm { border:none; background:none; cursor:pointer; color:var(--s300,#cbd5e1); font-size:16px; line-height:1; padding:0 0 0 4px; border-radius:4px; transition:color 0.15s; flex-shrink:0; min-width:0; }
     .p-rm:hover { color:#ef4444; }
 
     .c-actions { padding:0 12px 12px; display:flex; gap:7px; }
-    .c-btn { flex:1; border:none; cursor:pointer; border-radius:11px; padding:10px 6px; font-size:11px; font-weight:700; font-family:inherit; white-space:nowrap; transition:opacity 0.15s,transform 0.1s; line-height:1.3; }
+    .c-btn { flex:1; min-width:0; border:none; cursor:pointer; border-radius:11px; padding:10px 6px; font-size:11px; font-weight:700; font-family:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:opacity 0.15s,transform 0.1s; line-height:1.3; }
     .c-btn:active { transform:scale(0.96); }
     .c-btn:hover { opacity:0.82; }
     .c-btn.fill { color:white; }
